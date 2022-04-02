@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"log"
-	"time"
+	"os"
+	"strconv"
 
+	_ "github.com/joho/godotenv/autoload"
 	"github.com/mshafiee/swephgo"
 )
 
@@ -18,6 +20,21 @@ type Date struct {
 	Minute int
 }
 
+var (
+	birthDay, birthMonth, birthYear int
+	birthHour, latitude, longitude  float64
+)
+
+func init() {
+	birthDay, _ = strconv.Atoi(os.Getenv("BIRTHDAY"))
+	birthMonth, _ = strconv.Atoi(os.Getenv("BIRTHMONTH"))
+	birthYear, _ = strconv.Atoi(os.Getenv("BIRTHYEAR"))
+	birthHour, _ = strconv.ParseFloat(os.Getenv("BIRTHHOUR"), 64)
+	latitude, _ = strconv.ParseFloat(os.Getenv("LATITUDE"), 64)
+	longitude, _ = strconv.ParseFloat(os.Getenv("LONGITUDE"), 64)
+
+}
+
 func main() {
 	// Point to where Swiss Ephem files are located on your system
 	// It is a good practice to do it as initialization
@@ -28,10 +45,12 @@ func main() {
 	swephgo.Version(sweVer)
 	fmt.Printf("Library used: Swiss Ephemeris v%s\n", sweVer)
 
-	cT := time.Now().UTC()
+	var julianDay float64
+	// cT := time.Now().UTC()
 	// Convert date from gregorian calendar to julian day (float)
-	julianDay := swephgo.Julday(cT.Year(), int(cT.Month()), cT.Day(), float64(cT.Hour()), swephgo.SeGregCal)
-	fmt.Printf("Julian day today := %f\n", julianDay)
+	// julianDay := swephgo.Julday(cT.Year(), int(cT.Month()), cT.Day(), float64(cT.Hour()), swephgo.SeGregCal)
+	julianDay = swephgo.Julday(birthYear, birthMonth, birthDay, birthHour, swephgo.SeGregCal)
+	fmt.Printf("Julian day := %f\n", julianDay)
 
 	// Turtles all the way down from here
 	// swephgo is just baremetal, naked C
@@ -46,7 +65,45 @@ func main() {
 	ifltype = swephgo.SeEclAlltypesSolar
 	solarEclipse(&julianDay, ifltype)
 
+	julianDay = swephgo.Julday(birthYear, birthMonth, birthDay, birthHour, swephgo.SeGregCal)
+	// Convert ecclipse back to Gregorian date
+	birthdate := christian(julianDay)
+	fmt.Printf("Birth date %d-%d-%d %2d:%2d\n", birthdate.Year, birthdate.Month, birthdate.Day, birthdate.Hour, birthdate.Minute)
+
+	houses(&julianDay)
+
 	swephgo.Close()
+}
+
+// func housePos() {
+
+// 	hsys := int('W')
+// 	xpin := make([]float64, 2)
+// 	serr := make([]byte, 256)
+
+// 	swephgo.HousePos(hsys, xpin, serr)
+// }
+
+func houses(julianDay *float64) {
+	td := *julianDay
+	cusps := make([]float64, 13)
+	ascmc := make([]float64, 10)
+	serr := make([]byte, 256)
+	eclflag := swephgo.Houses(td, latitude, longitude, int('P'), cusps, ascmc)
+
+	if eclflag == swephgo.Err {
+		log.Printf("Error %d %s", eclflag, string(serr))
+	}
+
+	fmt.Println("---- Houses ---")
+	for i, c := range cusps {
+		fmt.Println(i, c)
+	}
+	fmt.Println()
+	for i, a := range ascmc {
+		fmt.Println(i, a)
+	}
+
 }
 
 func solarEclipse(julianDay *float64, ifltype int) {
