@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/mshafiee/swephgo"
@@ -32,7 +33,6 @@ func init() {
 	birthHour, _ = strconv.ParseFloat(os.Getenv("BIRTHHOUR"), 64)
 	latitude, _ = strconv.ParseFloat(os.Getenv("LATITUDE"), 64)
 	longitude, _ = strconv.ParseFloat(os.Getenv("LONGITUDE"), 64)
-
 }
 
 func main() {
@@ -44,7 +44,6 @@ func main() {
 	sweVer := make([]byte, 12)
 	swephgo.Version(sweVer)
 	fmt.Printf("Library used: Swiss Ephemeris v%s\n", sweVer)
-
 	var julianDay float64
 	// cT := time.Now().UTC()
 	// Convert date from gregorian calendar to julian day (float)
@@ -72,6 +71,22 @@ func main() {
 
 	houses(&julianDay)
 
+	// cT := time.Now().UTC()
+	// Convert date from gregorian calendar to julian day (float)
+	fmt.Println("---- Moon Phenomen---")
+	ipl := swephgo.SeMoon
+	fmt.Printf("planet - longitude, latitude, distance\t")
+	fmt.Println("angle, phase, elongation, diameter, magnitude")
+	loc, _ := time.LoadLocation("Europe/Warsaw")
+	start := time.Now().UTC()
+	start = Bod(start)
+	end := start.AddDate(0, 1, 0)
+	for d := start; d.After(end) == false; d = d.AddDate(0, 0, 1) {
+		julianDay := swephgo.Julday(d.Year(), int(d.Month()), d.Day(), float64(d.Hour()), swephgo.SeGregCal)
+		fmt.Printf(d.In(loc).Format("2006-01-02 15:04 "))
+		planet(&julianDay, ipl)
+		phenomen(&julianDay, ipl)
+	}
 	swephgo.Close()
 }
 
@@ -106,6 +121,32 @@ func houses(julianDay *float64) {
 
 }
 
+/*
+int32 swe_pheno_ut(
+double tjd_ut,       time Jul. Day UT
+int32 ipl,           planet number
+int32 iflag,         ephemeris flag
+double *attr,        return array, 20 doubles, see below
+char *serr);         return error string
+
+attr[0] = phase angle (Earth-planet-sun)
+attr[1] = phase (illumined fraction of disc)
+attr[2] = elongation of planet
+attr[3] = apparent diameter of disc
+attr[4] = apparent magnitude
+declare as attr[20] at least!
+*/
+func phenomen(julianDay *float64, planet int) {
+	iflag := swephgo.SeflgSwieph // use SWISSEPH ephemeris, default
+	attr := make([]float64, 20)
+	serr := make([]byte, 256)
+	eclflag := swephgo.Pheno(*julianDay, planet, iflag, attr, serr)
+	if eclflag == swephgo.Err {
+		log.Printf("Error %d %s", eclflag, string(serr))
+	}
+
+	fmt.Printf(" %.3f %.3f %.3f %.3f\n", attr[0], attr[1], attr[2], attr[3])
+}
 func solarEclipse(julianDay *float64, ifltype int) {
 	var eclipse Date
 	tret := make([]float64, 10)
@@ -219,6 +260,19 @@ func planets(julianDay *float64) {
 		fmt.Printf("%s - %.3f %.3f %.3f\n", string(planet), x2[0], x2[1], x2[2])
 	}
 }
+func planet(julianDay *float64, planet int) {
+	iflag := swephgo.SeflgSwieph // use SWISSEPH ephemeris, default
+	planetName := make([]byte, 20)
+	x2 := make([]float64, 6)
+	serr := make([]byte, 256)
+	swephgo.GetPlanetName(planet, planetName)
+	eclflag := swephgo.Calc(*julianDay, planet, iflag, x2, serr)
+	if eclflag == swephgo.Err {
+		log.Printf("Error %d %s", eclflag, string(serr))
+	}
+
+	fmt.Printf("%s - %.3f %.3f %.3f\t", string(planetName), x2[0], x2[1], x2[2])
+}
 
 func christian(tret float64) Date {
 	var dt Date
@@ -236,6 +290,11 @@ func christian(tret float64) Date {
 	m := int(60 * (hour[0] - float64(h)))
 	dt.Minute = m
 	return dt
+}
+
+func Bod(t time.Time) time.Time {
+	year, month, day := t.Date()
+	return time.Date(year, month, day, 0, 0, 0, 0, t.Location())
 }
 
 func bool2int(b bool) int {
