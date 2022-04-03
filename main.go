@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -41,51 +42,51 @@ func main() {
 	// even when not using files
 	swephgo.SetEphePath([]byte("/usr/local/share/sweph/ephe"))
 	// Check version of library
-	sweVer := make([]byte, 12)
-	swephgo.Version(sweVer)
-	fmt.Printf("Library used: Swiss Ephemeris v%s\n", sweVer)
-	var julianDay float64
+	// sweVer := make([]byte, 12)
+	// swephgo.Version(sweVer)
+	// fmt.Printf("Library used: Swiss Ephemeris v%s\n", sweVer)
 	// cT := time.Now().UTC()
 	// Convert date from gregorian calendar to julian day (float)
 	// julianDay := swephgo.Julday(cT.Year(), int(cT.Month()), cT.Day(), float64(cT.Hour()), swephgo.SeGregCal)
-	julianDay = swephgo.Julday(birthYear, birthMonth, birthDay, birthHour, swephgo.SeGregCal)
-	fmt.Printf("Julian day := %f\n", julianDay)
+	// var julianDay float64
+	// julianDay = swephgo.Julday(birthYear, birthMonth, birthDay, birthHour, swephgo.SeGregCal)
+	// fmt.Printf("Julian day := %f\n", julianDay)
 
 	// Turtles all the way down from here
 	// swephgo is just baremetal, naked C
 	// Use make to declare variables - preallocate space !!!
 
-	planets(&julianDay)
-
-	ifltype := swephgo.SeEclTotal
-	lunarEclipse(&julianDay, ifltype)
+	// planets(&julianDay)
 
 	// ifltype := swephgo.SeEclTotal
-	ifltype = swephgo.SeEclAlltypesSolar
-	solarEclipse(&julianDay, ifltype)
+	// lunarEclipse(&julianDay, ifltype)
 
-	julianDay = swephgo.Julday(birthYear, birthMonth, birthDay, birthHour, swephgo.SeGregCal)
-	// Convert ecclipse back to Gregorian date
-	birthdate := christian(julianDay)
-	fmt.Printf("Birth date %d-%d-%d %2d:%2d\n", birthdate.Year, birthdate.Month, birthdate.Day, birthdate.Hour, birthdate.Minute)
+	// ifltype := swephgo.SeEclTotal
+	// ifltype = swephgo.SeEclAlltypesSolar
+	// solarEclipse(&julianDay, ifltype)
 
-	houses(&julianDay)
+	// julianDay := swephgo.Julday(birthYear, birthMonth, birthDay, birthHour, swephgo.SeGregCal)
+	// // Convert ecclipse back to Gregorian date
+	// birthdate := christian(julianDay)
+	// fmt.Printf("Birth date %d-%d-%d %2d:%2d\n", birthdate.Year, birthdate.Month, birthdate.Day, birthdate.Hour, birthdate.Minute)
 
-	// cT := time.Now().UTC()
-	// Convert date from gregorian calendar to julian day (float)
+	// houses(&julianDay)
+
 	fmt.Println("---- Moon Phenomen---")
-	ipl := swephgo.SeMoon
-	fmt.Printf("planet - longitude, latitude, distance\t")
-	fmt.Println("angle, phase, elongation, diameter, magnitude")
+	fmt.Printf("date\tphase\tlongitude\tlatitude\n")
 	loc, _ := time.LoadLocation("Europe/Warsaw")
 	start := time.Now().UTC()
 	start = Bod(start)
 	end := start.AddDate(0, 1, 0)
+	ipl := swephgo.SeMoon
 	for d := start; d.After(end) == false; d = d.AddDate(0, 0, 1) {
 		julianDay := swephgo.Julday(d.Year(), int(d.Month()), d.Day(), float64(d.Hour()), swephgo.SeGregCal)
 		fmt.Printf(d.In(loc).Format("2006-01-02 15:04 "))
-		planet(&julianDay, ipl)
-		phenomen(&julianDay, ipl)
+		// planet(&julianDay, ipl)
+		// phenomen(&julianDay, ipl)
+		p, _ := phase(&julianDay, ipl)
+		ll, _ := waldo(&julianDay, ipl)
+		fmt.Printf("%.3f\t %.3f\t%.3f\n", p, ll[0], ll[1])
 	}
 	swephgo.Close()
 }
@@ -118,7 +119,6 @@ func houses(julianDay *float64) {
 	for i, a := range ascmc {
 		fmt.Println(i, a)
 	}
-
 }
 
 /*
@@ -147,6 +147,22 @@ func phenomen(julianDay *float64, planet int) {
 
 	fmt.Printf(" %.3f %.3f %.3f %.3f\n", attr[0], attr[1], attr[2], attr[3])
 }
+
+/*
+https://groups.io/g/swisseph/message/7327
+*/
+func phase(julianDay *float64, planet int) (float64, error) {
+	iflag := swephgo.SeflgSwieph // use SWISSEPH ephemeris, default
+	attr := make([]float64, 20)
+	serr := make([]byte, 256)
+	eclflag := swephgo.Pheno(*julianDay, planet, iflag, attr, serr)
+	if eclflag == swephgo.Err {
+		log.Printf("Error %d %s", eclflag, string(serr))
+		return 0.0, errors.New(string(serr))
+	}
+	return attr[1], nil
+}
+
 func solarEclipse(julianDay *float64, ifltype int) {
 	var eclipse Date
 	tret := make([]float64, 10)
@@ -260,6 +276,25 @@ func planets(julianDay *float64) {
 		fmt.Printf("%s - %.3f %.3f %.3f\n", string(planet), x2[0], x2[1], x2[2])
 	}
 }
+
+/* Where is a planet (lon, lat)
+
+ */
+func waldo(julianDay *float64, planet int) ([]float64, error) {
+	lonlat := make([]float64, 2)
+	iflag := swephgo.SeflgSwieph // use SWISSEPH ephemeris, default
+	x2 := make([]float64, 6)
+	serr := make([]byte, 256)
+	eclflag := swephgo.Calc(*julianDay, planet, iflag, x2, serr)
+	if eclflag == swephgo.Err {
+		return lonlat, errors.New(string(serr))
+	}
+	lonlat[0] = x2[0]
+	lonlat[1] = x2[1]
+	return lonlat, nil
+}
+
+//
 func planet(julianDay *float64, planet int) {
 	iflag := swephgo.SeflgSwieph // use SWISSEPH ephemeris, default
 	planetName := make([]byte, 20)
