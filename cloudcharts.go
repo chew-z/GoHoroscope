@@ -87,14 +87,14 @@ func CloudCharts(w http.ResponseWriter, r *http.Request) {
 			typical[i] = (h + l + c) / 3.0    // typical price - HLC/3
 			tmp.OHLC = [4]float64{o, c, l, h} // OHLC to OCLH
 			kd[i] = tmp
-			jD := swephgo.Julday(time.Year(), int(time.Month()), time.Day(), float64(time.Hour()), swephgo.SeGregCal)
-			moon[i], _ = Phase(&jD, swephgo.SeMoon)
-			mercury[i], _ = Phase(&jD, swephgo.SeMercury)
-			venus[i], _ = Phase(&jD, swephgo.SeVenus)
-			mars[i], _ = Phase(&jD, swephgo.SeMars)
-			jupiter[i], _ = Phase(&jD, swephgo.SeJupiter)
-			d, _ := Waldo(&jD, swephgo.SeVenus)
-			ret = append(ret, opts.Chart3DData{Value: []interface{}{i, d[2], d[5]}})
+			// jD := swephgo.Julday(time.Year(), int(time.Month()), time.Day(), float64(time.Hour()), swephgo.SeGregCal)
+			moon[i], _ = Phase(time, swephgo.SeMoon)
+			mercury[i], _ = Phase(time, swephgo.SeMercury)
+			venus[i], _ = Phase(time, swephgo.SeVenus)
+			// mars[i], _ = Phase(time, swephgo.SeMars)
+			// jupiter[i], _ = Phase(time, swephgo.SeJupiter)
+			// d, _ := Waldo(time, swephgo.SeVenus)
+			// ret = append(ret, opts.Chart3DData{Value: []interface{}{i, d[2], d[5]}})
 
 		}
 		ma0 := talib.Ma(typical[:], 10, talib.SMA)
@@ -103,12 +103,12 @@ func CloudCharts(w http.ResponseWriter, r *http.Request) {
 		copy(indicator1[:], ma1)
 		bars := ohlcChart()
 		indicators := indicatorsChart()
-		scatter3d := scatter3DBase()
+		// scatter3d := scatter3DBase()
 		page := components.NewPage()
 		page.AddCharts(
 			bars,
 			indicators,
-			scatter3d,
+			// scatter3d,
 		)
 		page.Render(w)
 	} else {
@@ -116,20 +116,20 @@ func CloudCharts(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func scatter3DBase() *charts.Scatter3D {
-	scatter3d := charts.NewScatter3D()
-	scatter3d.SetGlobalOptions(
-		charts.WithTitleOpts(opts.Title{Title: "basic Scatter3D example"}),
-		charts.WithVisualMapOpts(opts.VisualMap{
-			Calculable: true,
-			// Max:        1,
-			InRange: &opts.VisualMapInRange{Color: scatter3DColor},
-		}),
-	)
+// func scatter3DBase() *charts.Scatter3D {
+// 	scatter3d := charts.NewScatter3D()
+// 	scatter3d.SetGlobalOptions(
+// 		charts.WithTitleOpts(opts.Title{Title: "basic Scatter3D example"}),
+// 		charts.WithVisualMapOpts(opts.VisualMap{
+// 			Calculable: true,
+// 			// Max:        1,
+// 			InRange: &opts.VisualMapInRange{Color: scatter3DColor},
+// 		}),
+// 	)
 
-	scatter3d.AddSeries("scatter3d", ret)
-	return scatter3d
-}
+// 	scatter3d.AddSeries("scatter3d", ret)
+// 	return scatter3d
+// }
 
 func indicatorsChart() *charts.Line {
 	lineChart := charts.NewLine()
@@ -137,15 +137,15 @@ func indicatorsChart() *charts.Line {
 	z := make([]opts.LineData, 100)
 	m := make([]opts.LineData, 100)
 	v := make([]opts.LineData, 100)
-	r := make([]opts.LineData, 100)
-	j := make([]opts.LineData, 100)
+	// r := make([]opts.LineData, 100)
+	// j := make([]opts.LineData, 100)
 	for i := 0; i < len(kd); i++ {
 		x[i] = kd[i].Time
 		z[i] = opts.LineData{Value: moon[i]}
 		m[i] = opts.LineData{Value: mercury[i]}
 		v[i] = opts.LineData{Value: venus[i]}
-		r[i] = opts.LineData{Value: mars[i]}
-		j[i] = opts.LineData{Value: jupiter[i]}
+		// r[i] = opts.LineData{Value: mars[i]}
+		// j[i] = opts.LineData{Value: jupiter[i]}
 	}
 
 	lineChart.SetGlobalOptions(
@@ -168,8 +168,8 @@ func indicatorsChart() *charts.Line {
 	lineChart.SetXAxis(x).AddSeries("Moon", z)
 	lineChart.SetXAxis(x).AddSeries("Mercury", m)
 	lineChart.SetXAxis(x).AddSeries("Venus", v)
-	lineChart.SetXAxis(x).AddSeries("Mars", r)
-	lineChart.SetXAxis(x).AddSeries("Jupiter", j)
+	// lineChart.SetXAxis(x).AddSeries("Mars", r)
+	// lineChart.SetXAxis(x).AddSeries("Jupiter", j)
 	return lineChart
 }
 func ohlcChart() *charts.Kline {
