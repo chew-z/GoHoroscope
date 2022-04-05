@@ -43,10 +43,21 @@ var (
 	indicator2  [100]float64
 	indicator3  [100]float64
 	indicator4  [100]float64
+	indicator5  [100]float64
+	indicator6  [100]float64
 	typical     [100]float64
 	moon        [100]float64
 	mercury     [100]float64
 	venus       [100]float64
+	mars        [100]float64
+	jupiter     [100]float64
+
+	ret = make([]opts.Chart3DData, 0, 100)
+
+	scatter3DColor = []string{
+		"#313695", "#4575b4", "#74add1", "#abd9e9", "#e0f3f8",
+		"#fee090", "#fdae61", "#f46d43", "#d73027", "#a50026",
+	}
 )
 
 /*CloudCharts ...
@@ -80,26 +91,44 @@ func CloudCharts(w http.ResponseWriter, r *http.Request) {
 			moon[i], _ = Phase(&jD, swephgo.SeMoon)
 			mercury[i], _ = Phase(&jD, swephgo.SeMercury)
 			venus[i], _ = Phase(&jD, swephgo.SeVenus)
+			mars[i], _ = Phase(&jD, swephgo.SeMars)
+			jupiter[i], _ = Phase(&jD, swephgo.SeJupiter)
+			d, _ := Waldo(&jD, swephgo.SeVenus)
+			ret = append(ret, opts.Chart3DData{Value: []interface{}{i, d[2], d[5]}})
 
 		}
 		ma0 := talib.Ma(typical[:], 10, talib.SMA)
 		ma1 := talib.Ma(typical[:], 20, talib.SMA)
 		copy(indicator0[:], ma0)
 		copy(indicator1[:], ma1)
-		copy(indicator2[:], moon[:])
-		copy(indicator3[:], mercury[:])
-		copy(indicator4[:], venus[:])
 		bars := ohlcChart()
 		indicators := indicatorsChart()
+		scatter3d := scatter3DBase()
 		page := components.NewPage()
 		page.AddCharts(
 			bars,
 			indicators,
+			scatter3d,
 		)
 		page.Render(w)
 	} else {
 		http.Error(w, "Something went wrong, can't render chart", http.StatusInternalServerError)
 	}
+}
+
+func scatter3DBase() *charts.Scatter3D {
+	scatter3d := charts.NewScatter3D()
+	scatter3d.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{Title: "basic Scatter3D example"}),
+		charts.WithVisualMapOpts(opts.VisualMap{
+			Calculable: true,
+			// Max:        1,
+			InRange: &opts.VisualMapInRange{Color: scatter3DColor},
+		}),
+	)
+
+	scatter3d.AddSeries("scatter3d", ret)
+	return scatter3d
 }
 
 func indicatorsChart() *charts.Line {
@@ -108,16 +137,20 @@ func indicatorsChart() *charts.Line {
 	z := make([]opts.LineData, 100)
 	m := make([]opts.LineData, 100)
 	v := make([]opts.LineData, 100)
+	r := make([]opts.LineData, 100)
+	j := make([]opts.LineData, 100)
 	for i := 0; i < len(kd); i++ {
 		x[i] = kd[i].Time
-		z[i] = opts.LineData{Value: indicator2[i]}
-		m[i] = opts.LineData{Value: indicator3[i]}
-		v[i] = opts.LineData{Value: indicator4[i]}
+		z[i] = opts.LineData{Value: moon[i]}
+		m[i] = opts.LineData{Value: mercury[i]}
+		v[i] = opts.LineData{Value: venus[i]}
+		r[i] = opts.LineData{Value: mars[i]}
+		j[i] = opts.LineData{Value: jupiter[i]}
 	}
 
 	lineChart.SetGlobalOptions(
 		charts.WithTitleOpts(opts.Title{
-			Title: "Moon - Mercury - Venus",
+			Title: "Moon - Mercury - Venus - Mars - Jupiter",
 		}),
 		charts.WithYAxisOpts(opts.YAxis{
 			Scale: true,
@@ -135,6 +168,8 @@ func indicatorsChart() *charts.Line {
 	lineChart.SetXAxis(x).AddSeries("Moon", z)
 	lineChart.SetXAxis(x).AddSeries("Mercury", m)
 	lineChart.SetXAxis(x).AddSeries("Venus", v)
+	lineChart.SetXAxis(x).AddSeries("Mars", r)
+	lineChart.SetXAxis(x).AddSeries("Jupiter", j)
 	return lineChart
 }
 func ohlcChart() *charts.Kline {
@@ -164,7 +199,7 @@ func ohlcChart() *charts.Kline {
 		}),
 		charts.WithDataZoomOpts(opts.DataZoom{
 			Type:       "slider",
-			Start:      25,
+			Start:      21,
 			End:        100,
 			XAxisIndex: []int{0},
 		}),

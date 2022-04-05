@@ -57,3 +57,18 @@ func Phase(julianDay *float64, planet int) (float64, error) {
 	}
 	return attr[1], nil
 }
+/*
+Where is a planet (longitude, latitude, distance, speed in long., speed in lat., and speed in dist.)
+*/
+func Waldo(julianDay *float64, planet int) ([]float64, error) {
+	iflag := swephgo.SeflgSwieph // use SWISSEPH ephemeris, default
+	x2 := make([]float64, 6)
+	serr := make([]byte, 256)
+	eclflag := swephgo.Calc(*julianDay, planet, iflag, x2, serr)
+	if eclflag == swephgo.Err {
+		return x2, errors.New(string(serr))
+	}
+	return x2, nil
+}
+
+
