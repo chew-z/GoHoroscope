@@ -10,61 +10,10 @@ import (
 )
 
 /*
-Wrapping up some Swiss Ephem code in Goland - mind that guys at Astrodiesnt
-are old school dinosaurs who never evolved so their code is C-shit quality
-Seems like very proud of themselves cause they have learnt C and Delphi in their days
-Fuck. I guess they probably know Fortran too..
+Wrapping up some Swiss Ephem code in Goland -
+mind that guys at Astrodiesnt are old school C coding heros
 */
-/* TODO - get rid off?
-Date - date as struct of ints
-something in betwen swiss ephem float64 julian day date
-and go time.Time
-*/
-type Date struct {
-	Year   int
-	Month  int
-	Day    int
-	Hour   int
-	Minute int
-}
-
-/*
-What is a phase (ilumination) of a planet?
-https://groups.io/g/swisseph/message/7327
-*/
-func Phase(when time.Time, planet int) (float64, error) {
-	julianDay := julian(when)
-	iflag := swephgo.SeflgSwieph // use SWISSEPH ephemeris, default
-	attr := make([]float64, 20)
-	serr := make([]byte, 256)
-	eclflag := swephgo.Pheno(*julianDay, planet, iflag, attr, serr)
-	if eclflag == swephgo.Err {
-		log.Printf("Error %d %s", eclflag, string(serr))
-		return 0.0, errors.New(string(serr))
-	}
-	return attr[1], nil
-}
-
-/*
-Where is a planet (longitude, latitude, distance, speed in long., speed in lat., and speed in dist.)
-*/
-func Waldo(when time.Time, planet int) ([]float64, error) {
-	julianDay := julian(when)
-	iflag := swephgo.SeflgSwieph // use SWISSEPH ephemeris, default
-	x2 := make([]float64, 6)
-	serr := make([]byte, 256)
-	eclflag := swephgo.Calc(*julianDay, planet, iflag, x2, serr)
-	if eclflag == swephgo.Err {
-		return x2, errors.New(string(serr))
-	}
-	return x2, nil
-}
-
-/* Retro - look for change in planet direction -
-retrograde or direct movement
-
-*/
-func Retro(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr *[]byte) int {
+func RetroUt(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr *[]byte) int {
 	var tx float64
 	rval := Retro(start, ipl, iflag, &tx, idir, serr)
 	if rval >= 0 {
@@ -73,9 +22,8 @@ func Retro(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr *[
 	return rval
 }
 
-/* Not exposed use Retro(..) instead
- */
-func retro(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr *[]byte) int {
+//int swe_next_direction_change(double jd0, int ipl, int iflag, double *jdx, int *idir, char *serr)
+func Retro(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr *[]byte) int {
 	jd_step := 1.0
 	x2 := make([]float64, 6)
 	var y1, tx float64
@@ -90,15 +38,14 @@ func retro(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr *[
 	y0 := x2[0]
 	y1 = x2[0]
 	planetName := make([]byte, 10)
-	// start = nod(start)
+	start = nod(start)
 	end := start.AddDate(2, 0, 1) // look ahead up to 2 years and 1 day
 	step := 0
 	for d := start; d.After(end) == false; d = d.AddDate(0, 0, 1) {
 		swephgo.GetPlanetName(ipl, planetName)
 		// fmt.Printf("%s %.10f retro date %s\n", string(planetName), y0, d.Format("2006-01-02 15:04:05"))
-		// jd := swephgo.Julday(d.Year(), int(d.Month()), d.Day(), float64(d.Hour()), swephgo.SeGregCal)
-		jd := julian(start)
-		rval = swephgo.Calc(*jd, ipl, iflag, x2, *serr)
+		jd := swephgo.Julday(d.Year(), int(d.Month()), d.Day(), float64(d.Hour()), swephgo.SeGregCal)
+		rval = swephgo.Calc(jd, ipl, iflag, x2, *serr)
 		if rval < 0 {
 			return int(rval)
 		}
@@ -117,7 +64,7 @@ func retro(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr *[
 		if tx < -1 || tx > 1 {
 			continue
 		}
-		*jdx = *jd - jd_step + tx*jd_step
+		*jdx = jd - jd_step + tx*jd_step
 		if *jdx-jd0 < 30.0/1440 {
 			continue // ignore if within 30 minutes of start moment
 		}
@@ -170,35 +117,57 @@ func retro(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr *[
 	return 0
 }
 
-/* Helpers - should go to separete file */
+/*
+What is the phase (ilumination) of a planet?
+https://groups.io/g/swisseph/message/7327
+*/
+func Phase(when time.Time, planet int) (float64, error) {
+	julianDay := julian(when)
+	iflag := swephgo.SeflgSwieph // use SWISSEPH ephemeris, default
+	attr := make([]float64, 20)
+	serr := make([]byte, 256)
+	eclflag := swephgo.Pheno(*julianDay, planet, iflag, attr, serr)
+	if eclflag == swephgo.Err {
+		log.Printf("Error %d %s", eclflag, string(serr))
+		return 0.0, errors.New(string(serr))
+	}
+	return attr[1], nil
+}
 
-func christian(tret *float64) Date {
-	var dt Date
+/*
+Where is a planet (longitude, latitude, distance, speed in long., speed in lat., and speed in dist.)
+*/
+func Waldo(when time.Time, planet int) ([]float64, error) {
+	julianDay := julian(when)
+	iflag := swephgo.SeflgSwieph // use SWISSEPH ephemeris, default
+	x2 := make([]float64, 6)
+	serr := make([]byte, 256)
+	eclflag := swephgo.Calc(*julianDay, planet, iflag, x2, serr)
+	if eclflag == swephgo.Err {
+		return x2, errors.New(string(serr))
+	}
+	return x2, nil
+}
+
+/* general helpers - should go to separete file */
+
+func jdToUTC(jd *float64) time.Time {
 	year := make([]int, 1)
 	month := make([]int, 1)
 	day := make([]int, 1)
 	hour := make([]float64, 1)
-	// Convert back to Gregorian date
-	swephgo.Revjul(*tret, swephgo.SeGregCal, year, month, day, hour)
-	dt.Year = year[0]
-	dt.Month = month[0]
-	dt.Day = day[0]
+	swephgo.Revjul(*jd, swephgo.SeGregCal, year, month, day, hour)
 	h := int(hour[0])
-	dt.Hour = h
 	m := int(60 * (hour[0] - float64(h)))
-	dt.Minute = m
-	return dt
-}
-
-func chrisToUTC(rD *Date) time.Time {
-	utc := time.Date(rD.Year, time.Month(rD.Month), rD.Day, rD.Hour, rD.Minute, 0, 0, time.UTC)
+	utc := time.Date(year[0], time.Month(month[0]), day[0], h, m, 0, 0, time.UTC)
 	return utc
 }
 
-func chrisToLocal(rD *Date) time.Time {
-	local := time.Date(rD.Year, time.Month(rD.Month), rD.Day, rD.Hour, rD.Minute, 0, 0, time.UTC)
-	return local.In(location)
+func jdToLocal(jd *float64) time.Time {
+	utc := jdToUTC(jd)
+	return utc.In(location)
 }
+
 func julian(d time.Time) *float64 {
 	h := float64(d.Hour()) + float64(d.Minute())/60 + float64(d.Second())/3600
 	jd := swephgo.Julday(d.Year(), int(d.Month()), d.Day(), h, swephgo.SeGregCal)

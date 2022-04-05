@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -17,7 +19,6 @@ var (
 )
 
 func init() {
-	// loc = os.Getenv("LOCATION")
 	location, _ = time.LoadLocation(city)
 	// Point to where Swiss Ephem files are located on your system
 	// It is a good practice to do it as initialization
@@ -26,16 +27,59 @@ func init() {
 }
 
 func main() {
-	// Where the magic happens
-	http.HandleFunc("/", CloudCharts)
-	http.ListenAndServe(":8089", nil)
-
+	// Draw some charts
+	// http.HandleFunc("/", CloudCharts)
+	// http.ListenAndServe(":8089", nil)
+	
+	// Test date conversion to julian and back
 	// start := time.Now().UTC() // Start now
 	// tx := julian(start)
-	// fmt.Printf("%f\n", *tx)
-	// rD := christian(tx)
-	// rT := chrisToLocal(&rD)
-	// fmt.Printf("%s\n", rT)
+	// rS := jdToLocal(tx)
+	// rU := jdToUTC(tx)
+	// fmt.Printf("%s\t\t%s\n", rS, rU)
+	// Print table of retrograde movements
+	PrintRetro()
 
 	swephgo.Close()
+}
+
+/* PrintRetro - find retrograde movements
+of planets for next 5 years
+(when the movement is changing direction)
+*/
+func PrintRetro() {
+	iflag := swephgo.SeflgSwieph
+	var tx float64
+	var idir int
+	serr := make([]byte, 256)
+	bodies := []int{
+		swephgo.SeMercury,
+		swephgo.SeVenus,
+		swephgo.SeMars,
+		// swephgo.SeJupiter,
+		// swephgo.SeNeptune,
+		// swephgo.SeUranus,
+		// swephgo.SePluto,
+	}
+	start := time.Now().UTC()     // Start now
+	end := start.AddDate(5, 0, 1) // and look ahead 5 years and 1 day
+	for _, ipl := range bodies {
+		planetName := make([]byte, 10)
+		swephgo.GetPlanetName(ipl, planetName)
+		d := start
+		for d.After(end) == false {
+			// find nearest change of direction
+			if retval := RetroUt(d, ipl, iflag, &tx, &idir, &serr); retval < 0 {
+				log.Printf("Error %s", string(serr))
+				return
+			}
+			// what is the vector?
+			direction := "direct"
+			if idir < 0 {
+				direction = "retro"
+			}
+			fmt.Printf("%s\t%s\t%s\n", string(planetName), direction, jdToLocal(&tx))
+			d = jdToUTC(&tx).AddDate(0, 0, 7) // start looking for next change in a direction 7 days ahead
+		}
+	}
 }
