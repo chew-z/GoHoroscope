@@ -30,7 +30,7 @@ func main() {
 	// Draw some charts
 	// http.HandleFunc("/", CloudCharts)
 	// http.ListenAndServe(":8089", nil)
-	
+
 	// Test date conversion to julian and back
 	// start := time.Now().UTC() // Start now
 	// tx := julian(start)
@@ -52,14 +52,17 @@ func PrintRetro() {
 	var tx float64
 	var idir int
 	serr := make([]byte, 256)
+
+	waldo := make([]float64, 6)
+	var phase float64
 	bodies := []int{
 		swephgo.SeMercury,
 		swephgo.SeVenus,
 		swephgo.SeMars,
-		// swephgo.SeJupiter,
-		// swephgo.SeNeptune,
-		// swephgo.SeUranus,
-		// swephgo.SePluto,
+		swephgo.SeJupiter,
+		swephgo.SeNeptune,
+		swephgo.SeUranus,
+		swephgo.SePluto,
 	}
 	start := time.Now().UTC()     // Start now
 	end := start.AddDate(5, 0, 1) // and look ahead 5 years and 1 day
@@ -78,8 +81,11 @@ func PrintRetro() {
 			if idir < 0 {
 				direction = "retro"
 			}
-			fmt.Printf("%s\t%s\t%s\n", string(planetName), direction, jdToLocal(&tx))
-			d = jdToUTC(&tx).AddDate(0, 0, 7) // start looking for next change in a direction 7 days ahead
+			wd := jdToUTC(&tx)
+			waldo, _ = Waldo(wd, ipl, swephgo.SeflgSwieph)
+			phase, _ = Phase(wd, ipl)
+			fmt.Printf("%s\t%s\t%s\t-\t%.5f\t%.1f\t%.5f\n", jdToLocal(&tx), string(planetName), direction, phase, waldo[0], waldo[2])
+			d = wd.AddDate(0, 0, 7) // start looking for next change in a direction 7 days ahead
 		}
 	}
 }
