@@ -24,9 +24,8 @@ var (
 	// Houses names
 	hnames = []string{"0", "I", "II", "III", "IV", "V", "VI", "VII", "VIII",
 		"IX", "X", "XI", "XII"}
-	Cusps  = make([]float64, 13)
-	Asmc   = make([]float64, 10)
 	bodies = []int{
+		swephgo.SeSun,
 		swephgo.SeMoon,
 		swephgo.SeMercury,
 		swephgo.SeVenus,
@@ -54,6 +53,14 @@ var aspectsettings = []aspectsetting{
 	{30, 1, "Semi-sextile"},
 	{0, 10, "Conjunction"},
 }
+var system = map[string]int{
+	"Placidus":      int('P'),
+	"Koch":          int('K'),
+	"Porphyrius":    int('O'),
+	"Regiomontanus": int('R'),
+	"Equal":         int('E'),
+	"Whole":         int('W'),
+}
 
 // House represents an astrological house cuspid
 type House struct {
@@ -71,39 +78,41 @@ func init() {
 }
 
 func main() {
-	now := time.Now().UTC()
-	err := cusps(now, lat, lon)
-	for i, c := range Cusps {
-		fmt.Printf("House # %d - %.2f\n", i, c)
-	}
-	fmt.Println(Asmc[0])
-	if err != nil {
-		log.Println(err.Error())
-	}
-	// TODO - function
-	H := Houses()
-	for _, h := range *H {
-		fmt.Printf("%s - %s - %.2f\n", h.Number, h.SignName, h.DegreeUt)
-	}
-	// TODO - function
-	B := Bodies(now)
-	for i, b1 := range B {
-		fmt.Printf("%s - %.2f\n", getPlanetName(bodies[i]), rad2deg(b1))
-		for j, b2 := range B[i+1:] {
-			if a := aspect(b1, b2); a != "" {
-				fmt.Printf("\t%s - %s - %.2f\n", a, getPlanetName(bodies[i+j+1]), rad2deg(b2))
+	now := time.Now()
+	hsys := system["Placidus"]
+	Horoscope(now, hsys)
+	swephgo.Close()
+}
+
+func Horoscope(when time.Time, hsys int) {
+	fmt.Printf("%s - lat: %.2f, lon: %.2f\n", when.Format(time.RFC822), lat, lon)
+	if Cusps, Asmc, e := Cusps(when, lat, lon, hsys); e != nil {
+		log.Panic(e)
+	} else {
+		fmt.Printf("Ascendant: %.2f MC: %.2f\n", Asmc[0], Asmc[1])
+		// TODO - function
+		H := Houses(Cusps)
+		for _, h := range *H {
+			fmt.Printf("%s\t%.2f\t%.2f\t%s\n", h.Number, h.DegreeUt, h.Degree, h.SignName)
+		}
+		fmt.Println()
+		// TODO - function
+		B := Bodies(when)
+		for i, b1 := range B {
+			fmt.Printf("%s - %.2f in %s\n", getPlanetName(bodies[i]), rad2deg(b1), sign(b1))
+			for j, b2 := range B[i+1:] {
+				if a := aspect(b1, b2); a != "" {
+					fmt.Printf("\t%s - %s - %.2f in %s\n", a, getPlanetName(bodies[i+j+1]), rad2deg(b2), sign(b2))
+				}
 			}
 		}
 	}
-
-	swephgo.Close()
 }
 
 func Signs() {
 	for x := 0.0; x < 2.0*math.Pi; x += math.Pi / 6.0 {
-		fmt.Printf("Sign: %s\tbeg: %.3f, end: %.3f\tcosinus(beg): %.3f, cos(end): %.3f\n", sign(x), x, x+math.Pi/6.0, math.Cos(x), math.Cos(x+math.Pi/6.0))
+		fmt.Printf("Sign: %s\tbeg: %.3f, end: %.3f\t(beg): %.3f, (end): %.3f\n", sign(x), x, x+math.Pi/6.0, rad2deg(x), rad2deg(x+math.Pi/6.0))
 	}
-
 }
 
 /* sign() - cast latitude in radians to zodiac sign name
@@ -128,7 +137,7 @@ func Bodies(when time.Time) []float64 {
 	return b
 }
 
-func Houses() *[]House {
+func Houses(Cusps []float64) *[]House {
 	var houses []House
 	for house := 1; house <= numhouses; house++ {
 		degreeUt := deg2rad(float64(Cusps[house]))
@@ -139,9 +148,9 @@ func Houses() *[]House {
 				houses = append(houses,
 					House{
 						SignName: signNames[i],
-						Degree:   math.Round(rad2deg(degreeUt - degLow)),
+						Degree:   rad2deg(degreeUt - degLow),
 						Number:   hnames[house],
-						DegreeUt: math.Round(rad2deg(degreeUt)),
+						DegreeUt: rad2deg(degreeUt),
 					},
 				)
 			}
@@ -150,15 +159,17 @@ func Houses() *[]House {
 	return &houses
 }
 
-func cusps(when time.Time, lat float64, lon float64) error {
-	swephgo.SetTopo(lat, lon, 0)
-	julianDay := julian(when)
+func Cusps(when time.Time, lat float64, lon float64, hsys int) ([]float64, []float64, error) {
+	cusps := make([]float64, 13)
+	asmc := make([]float64, 10)
 	serr := make([]byte, 256)
-	if eclflag := swephgo.Houses(*julianDay, lat, lon, int('P'), Cusps, Asmc); eclflag == swephgo.Err {
+	julianDay := julian(when)
+	swephgo.SetTopo(lat, lon, 0)
+	if eclflag := swephgo.Houses(*julianDay, lat, lon, hsys, cusps, asmc); eclflag == swephgo.Err {
 		log.Printf("Error %d %s", eclflag, string(serr))
-		return errors.New(string(serr))
+		return nil, nil, errors.New(string(serr))
 	}
-	return nil
+	return cusps, asmc, nil
 }
 
 // makeAspect returns an Aspect for a given orb and two celectial bodies
