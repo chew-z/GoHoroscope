@@ -38,21 +38,6 @@ var (
 	}
 )
 
-type aspectsetting struct {
-	delta float64
-	orb   float64
-	title string
-}
-
-var aspectsettings = []aspectsetting{
-	{180, 10, "Opposition"},
-	{150, 2, "Quincunx"},
-	{120, 8, "Trine"},
-	{90, 6, "Square"},
-	{60, 4, "Sextile"},
-	{30, 1, "Semi-sextile"},
-	{0, 10, "Conjunction"},
-}
 var system = map[string]int{
 	"Placidus":      int('P'),
 	"Koch":          int('K'),
@@ -68,6 +53,7 @@ type House struct {
 	Degree   float64
 	Number   string
 	DegreeUt float64
+	Bodies   []int
 }
 
 func init() {
@@ -99,7 +85,7 @@ func Horoscope(when time.Time, hsys int) {
 		// TODO - function
 		B := Bodies(when)
 		for i, b1 := range B {
-			fmt.Printf("%s - %.2f in %s\n", getPlanetName(bodies[i]), rad2deg(b1), sign(b1))
+			fmt.Printf("House %s: %s - %.2f in %s\n", house(b1, H), getPlanetName(bodies[i]), rad2deg(b1), sign(b1))
 			for j, b2 := range B[i+1:] {
 				if a := aspect(b1, b2); a != "" {
 					fmt.Printf("\t%s - %s - %.2f in %s\n", a, getPlanetName(bodies[i+j+1]), rad2deg(b2), sign(b2))
@@ -115,7 +101,7 @@ func Signs() {
 	}
 }
 
-/* sign() - cast latitude in radians to zodiac sign name
+/* sign() - cast longitude in radians to zodiac sign name
  */
 func sign(rad float64) string {
 	for i, sign := range signNames {
@@ -128,6 +114,8 @@ func sign(rad float64) string {
 	return ""
 }
 
+/* Bodies() - return longitude of all planets
+ */
 func Bodies(when time.Time) []float64 {
 	var b []float64
 	for _, ipl := range bodies {
@@ -137,6 +125,27 @@ func Bodies(when time.Time) []float64 {
 	return b
 }
 
+/* house() get house for planet longitude
+
+ */
+func house(rad float64, houses *[]House) string {
+	for i := 0; i < len(*houses); i++ {
+		degLow := deg2rad((*houses)[i].DegreeUt)
+		var degHigh float64
+		if i == len(*houses)-1 {
+			degHigh = deg2rad((*houses)[0].DegreeUt)
+		} else {
+			degHigh = deg2rad((*houses)[i+1].DegreeUt)
+		}
+		if rad >= degLow && rad <= degHigh {
+			return (*houses)[i].Number
+		}
+	}
+	return (*houses)[0].Number
+}
+
+/* Houses() - fill in all houses (sign, position, cusp)
+ */
 func Houses(Cusps []float64) *[]House {
 	var houses []House
 	for house := 1; house <= numhouses; house++ {
@@ -159,6 +168,9 @@ func Houses(Cusps []float64) *[]House {
 	return &houses
 }
 
+/* Cusps() gest cusps and asmc
+
+ */
 func Cusps(when time.Time, lat float64, lon float64, hsys int) ([]float64, []float64, error) {
 	cusps := make([]float64, 13)
 	asmc := make([]float64, 10)
@@ -172,7 +184,8 @@ func Cusps(when time.Time, lat float64, lon float64, hsys int) ([]float64, []flo
 	return cusps, asmc, nil
 }
 
-// makeAspect returns an Aspect for a given orb and two celectial bodies
+/* aspect() returns an Aspect of two celectial bodies
+ */
 func aspect(body1 float64, body2 float64) string {
 	aspect := ""
 	angle := smallestSignedAngleBetween(body1, body2)
@@ -182,11 +195,20 @@ func aspect(body1 float64, body2 float64) string {
 	if math.Abs(angle-math.Pi) < deg2rad(10.0) {
 		aspect = "Opposition"
 	}
+	if math.Abs(angle-2.0*math.Pi/3.0) < deg2rad(8.0) {
+		aspect = "Trine"
+	}
 	if math.Abs(angle-math.Pi/2.0) < deg2rad(6.0) {
 		aspect = "Square"
 	}
-	if math.Abs(angle-2.0*math.Pi/3.0) < deg2rad(8.0) {
-		aspect = "Trine"
+	if math.Abs(angle-math.Pi/3.0) < deg2rad(4.0) {
+		aspect = "Sextile"
+	}
+	if math.Abs(angle-5.0*math.Pi/6.0) < deg2rad(2.0) {
+		aspect = "Quincunx"
+	}
+	if math.Abs(angle-math.Pi/6.0) < deg2rad(1.0) {
+		aspect = "Semi-sextile"
 	}
 	return aspect
 }
