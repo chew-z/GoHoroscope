@@ -45,9 +45,9 @@ func main() {
 	// sweVer := make([]byte, 12)
 	// swephgo.Version(sweVer)
 	// fmt.Printf("Library used: Swiss Ephemeris v%s\n", sweVer)
-	// cT := time.Now().UTC()
+	cT := time.Now().UTC()
 	// Convert date from gregorian calendar to julian day (float)
-	// julianDay := swephgo.Julday(cT.Year(), int(cT.Month()), cT.Day(), float64(cT.Hour()), swephgo.SeGregCal)
+	julianDay := swephgo.Julday(cT.Year(), int(cT.Month()), cT.Day(), float64(cT.Hour()), swephgo.SeGregCal)
 	// var julianDay float64
 	// julianDay = swephgo.Julday(birthYear, birthMonth, birthDay, birthHour, swephgo.SeGregCal)
 	// fmt.Printf("Julian day := %f\n", julianDay)
@@ -58,12 +58,12 @@ func main() {
 
 	// planets(&julianDay)
 
-	// ifltype := swephgo.SeEclTotal
-	// lunarEclipse(&julianDay, ifltype)
+	ifltype := swephgo.SeEclTotal
+	lunarEclipse(&julianDay, ifltype)
 
-	// ifltype := swephgo.SeEclTotal
-	// ifltype = swephgo.SeEclAlltypesSolar
-	// solarEclipse(&julianDay, ifltype)
+	ifltype = swephgo.SeEclTotal
+	ifltype = swephgo.SeEclAlltypesSolar
+	solarEclipse(&julianDay, ifltype)
 
 	// julianDay := swephgo.Julday(birthYear, birthMonth, birthDay, birthHour, swephgo.SeGregCal)
 	// // Convert ecclipse back to Gregorian date
@@ -72,22 +72,22 @@ func main() {
 
 	// houses(&julianDay)
 
-	fmt.Println("---- Moon Phenomen---")
-	fmt.Printf("date\tphase\tlongitude\tlatitude\n")
-	loc, _ := time.LoadLocation("Europe/Warsaw")
-	start := time.Now().UTC()
-	start = Bod(start)
-	end := start.AddDate(0, 1, 0)
-	ipl := swephgo.SeMoon
-	for d := start; d.After(end) == false; d = d.AddDate(0, 0, 1) {
-		julianDay := swephgo.Julday(d.Year(), int(d.Month()), d.Day(), float64(d.Hour()), swephgo.SeGregCal)
-		fmt.Printf(d.In(loc).Format("2006-01-02 15:04 "))
-		// planet(&julianDay, ipl)
-		// phenomen(&julianDay, ipl)
-		p, _ := phase(&julianDay, ipl)
-		ll, _ := waldo(&julianDay, ipl)
-		fmt.Printf("%.3f\t %.3f\t%.3f\n", p, ll[0], ll[1])
-	}
+	// fmt.Println("---- Moon Phenomen---")
+	// fmt.Printf("date\tphase\tlongitude\tlatitude\n")
+	// loc, _ := time.LoadLocation("Europe/Warsaw")
+	// start := time.Now().UTC()
+	// start = Bod(start)
+	// end := start.AddDate(0, 1, 0)
+	// ipl := swephgo.SeMoon
+	// for d := start; d.After(end) == false; d = d.AddDate(0, 0, 1) {
+	// 	julianDay := swephgo.Julday(d.Year(), int(d.Month()), d.Day(), float64(d.Hour()), swephgo.SeGregCal)
+	// 	fmt.Printf(d.In(loc).Format("2006-01-02 15:04 "))
+	// 	// planet(&julianDay, ipl)
+	// 	// phenomen(&julianDay, ipl)
+	// 	p, _ := phase(&julianDay, ipl)
+	// 	ll, _ := waldo(&julianDay, ipl)
+	// 	fmt.Printf("%.3f\t %.3f\t%.3f\n", p, ll[0], ll[1])
+	// }
 	swephgo.Close()
 }
 
