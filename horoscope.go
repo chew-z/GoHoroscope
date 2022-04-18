@@ -14,15 +14,22 @@ import (
 	"github.com/mshafiee/swephgo"
 )
 
+// House represents an astrological house
+type House struct {
+	SignName string
+	Degree   float64
+	Number   string
+	DegreeUt float64
+	Bodies   []int
+}
+
 var (
 	lat, _    = strconv.ParseFloat(os.Getenv("LATITUDE"), 64)
 	lon, _    = strconv.ParseFloat(os.Getenv("LONGITUDE"), 64)
-	numhouses = 12
 	signNames = []string{"Aries", "Taurus", "Gemini", "Cancer", "Leo",
 		"Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius",
 		"Pisces"}
-	// Houses names
-	hnames = []string{"0", "I", "II", "III", "IV", "V", "VI", "VII", "VIII",
+	houseNames = []string{"0", "I", "II", "III", "IV", "V", "VI", "VII", "VIII",
 		"IX", "X", "XI", "XII"}
 	bodies = []int{
 		swephgo.SeSun,
@@ -36,41 +43,28 @@ var (
 		swephgo.SeNeptune,
 		swephgo.SePluto,
 	}
+	system = map[string]int{
+		"Placidus":      int('P'),
+		"Koch":          int('K'),
+		"Porphyrius":    int('O'),
+		"Regiomontanus": int('R'),
+		"Equal":         int('E'),
+		"Whole":         int('W'),
+	}
 )
 
-var system = map[string]int{
-	"Placidus":      int('P'),
-	"Koch":          int('K'),
-	"Porphyrius":    int('O'),
-	"Regiomontanus": int('R'),
-	"Equal":         int('E'),
-	"Whole":         int('W'),
-}
-
-// House represents an astrological house cuspid
-type House struct {
-	SignName string
-	Degree   float64
-	Number   string
-	DegreeUt float64
-	Bodies   []int
-}
-
 func init() {
-	// Point to where Swiss Ephem files are located on your system
-	// It is a good practice to do it as initialization
-	// even when not using files
 	swephgo.SetEphePath([]byte("/usr/local/share/sweph/ephe"))
 }
 
 func main() {
 	now := time.Now()
 	hsys := system["Placidus"]
-	Horoscope(now, hsys)
-	swephgo.Close()
+	PrintHoroscope(now, hsys) // lat, lon is given implicite in .env
+	defer swephgo.Close()
 }
 
-func Horoscope(when time.Time, hsys int) {
+func PrintHoroscope(when time.Time, hsys int) {
 	fmt.Printf("%s - lat: %.2f, lon: %.2f\n", when.Format(time.RFC822), lat, lon)
 	if Cusps, Asmc, e := Cusps(when, lat, lon, hsys); e != nil {
 		log.Panic(e)
@@ -85,33 +79,14 @@ func Horoscope(when time.Time, hsys int) {
 		// TODO - function
 		B := Bodies(when)
 		for i, b1 := range B {
-			fmt.Printf("House %s: %s - %.2f in %s\n", house(b1, H), getPlanetName(bodies[i]), rad2deg(b1), sign(b1))
+			fmt.Printf("House %s: %s - %.2f in %s\n", getHouse(b1, H), getPlanetName(bodies[i]), rad2deg(b1), getSign(b1))
 			for j, b2 := range B[i+1:] {
-				if a := aspect(b1, b2); a != "" {
-					fmt.Printf("\t%s - %s - %.2f in %s\n", a, getPlanetName(bodies[i+j+1]), rad2deg(b2), sign(b2))
+				if asp := Aspect(b1, b2); asp != "" {
+					fmt.Printf("\t%s - %s - %.2f in %s\n", asp, getPlanetName(bodies[i+j+1]), rad2deg(b2), getSign(b2))
 				}
 			}
 		}
 	}
-}
-
-func Signs() {
-	for x := 0.0; x < 2.0*math.Pi; x += math.Pi / 6.0 {
-		fmt.Printf("Sign: %s\tbeg: %.3f, end: %.3f\t(beg): %.3f, (end): %.3f\n", sign(x), x, x+math.Pi/6.0, rad2deg(x), rad2deg(x+math.Pi/6.0))
-	}
-}
-
-/* sign() - cast longitude in radians to zodiac sign name
- */
-func sign(rad float64) string {
-	for i, sign := range signNames {
-		degLow := float64(i) * math.Pi / 6.0
-		degHigh := float64((i + 1)) * math.Pi / 6.0
-		if rad >= degLow && rad <= degHigh {
-			return sign
-		}
-	}
-	return ""
 }
 
 /* Bodies() - return longitude of all planets
@@ -125,30 +100,11 @@ func Bodies(when time.Time) []float64 {
 	return b
 }
 
-/* house() get house for planet longitude
-
- */
-func house(rad float64, houses *[]House) string {
-	for i := 0; i < len(*houses); i++ {
-		degLow := deg2rad((*houses)[i].DegreeUt)
-		var degHigh float64
-		if i == len(*houses)-1 {
-			degHigh = deg2rad((*houses)[0].DegreeUt)
-		} else {
-			degHigh = deg2rad((*houses)[i+1].DegreeUt)
-		}
-		if rad >= degLow && rad <= degHigh {
-			return (*houses)[i].Number
-		}
-	}
-	return (*houses)[0].Number
-}
-
 /* Houses() - fill in all houses (sign, position, cusp)
  */
 func Houses(Cusps []float64) *[]House {
 	var houses []House
-	for house := 1; house <= numhouses; house++ {
+	for house := 1; house <= 12; house++ {
 		degreeUt := deg2rad(float64(Cusps[house]))
 		for i, _ := range signNames {
 			degLow := float64(i) * math.Pi / 6.0
@@ -158,7 +114,7 @@ func Houses(Cusps []float64) *[]House {
 					House{
 						SignName: signNames[i],
 						Degree:   rad2deg(degreeUt - degLow),
-						Number:   hnames[house],
+						Number:   houseNames[house],
 						DegreeUt: rad2deg(degreeUt),
 					},
 				)
@@ -169,7 +125,6 @@ func Houses(Cusps []float64) *[]House {
 }
 
 /* Cusps() gest cusps and asmc
-
  */
 func Cusps(when time.Time, lat float64, lon float64, hsys int) ([]float64, []float64, error) {
 	cusps := make([]float64, 13)
@@ -184,9 +139,10 @@ func Cusps(when time.Time, lat float64, lon float64, hsys int) ([]float64, []flo
 	return cusps, asmc, nil
 }
 
-/* aspect() returns an Aspect of two celectial bodies
- */
-func aspect(body1 float64, body2 float64) string {
+/* Aspect() returns an aspect of two celectial bodies if any
+or empty string
+*/
+func Aspect(body1 float64, body2 float64) string {
 	aspect := ""
 	angle := smallestSignedAngleBetween(body1, body2)
 	if math.Abs(angle) < deg2rad(10.0) {
@@ -231,17 +187,40 @@ func getPlanetName(ipl int) string {
 	return planetName
 }
 
-func smallestSignedAngleBetween(x float64, y float64) float64 {
-	return math.Min(2.0*math.Pi-math.Abs(x-y), math.Abs(x-y))
+/* getHouse() get house for longitude in radians
+given houses cusps
+*/
+func getHouse(rad float64, houses *[]House) string {
+	for i := 0; i < len(*houses); i++ {
+		degLow := deg2rad((*houses)[i].DegreeUt)
+		var degHigh float64
+		if i == len(*houses)-1 {
+			degHigh = deg2rad((*houses)[0].DegreeUt)
+		} else {
+			degHigh = deg2rad((*houses)[i+1].DegreeUt)
+		}
+		if rad >= degLow && rad <= degHigh {
+			return (*houses)[i].Number
+		}
+	}
+	return (*houses)[0].Number
 }
 
-// Make sure angle values are in within the 0 to 360 range
-func normalize(angle float64) float64 {
-	angle = math.Mod(angle, 2.0*math.Pi)
-	if angle < 0 {
-		angle += 2.0 * math.Pi
+/* getSign() - cast longitude in radians to zodiac sign name
+ */
+func getSign(rad float64) string {
+	for i, sign := range signNames {
+		degLow := float64(i) * math.Pi / 6.0
+		degHigh := float64((i + 1)) * math.Pi / 6.0
+		if rad >= degLow && rad <= degHigh {
+			return sign
+		}
 	}
-	return angle
+	return ""
+}
+
+func smallestSignedAngleBetween(x float64, y float64) float64 {
+	return math.Min(2.0*math.Pi-math.Abs(x-y), math.Abs(x-y))
 }
 
 func julian(d time.Time) *float64 {
