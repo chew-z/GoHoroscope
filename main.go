@@ -87,7 +87,9 @@ func PrintRetro(start time.Time, end time.Time) {
 			}
 			// what is the vector?
 			if idir > 0 {
-				fmt.Printf("%s retrograde starts: %s ends: %s\n", planetName, prevDate.Format(time.RFC822), wd.Format(time.RFC822))
+				d1 := prevDate.In(location).Format(time.RFC822)
+				d2 := wd.In(location).Format(time.RFC822)
+				fmt.Printf("%s retrograde starts: %s ends: %s\n", planetName, d1, d2)
 			}
 			prevDate = wd
 			d = wd.AddDate(0, 0, 7) // start looking for next change in a direction 7 days ahead
