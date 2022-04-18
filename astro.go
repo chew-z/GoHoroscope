@@ -1,18 +1,136 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"log"
 	"math"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/mshafiee/swephgo"
 )
 
-/*
-Wrapping up some Swiss Ephem code in Goland -
-mind that guys at Astrodiesnt are old school C coding heros
+// House represents an astrological house
+type House struct {
+	SignName string
+	Degree   float64
+	Number   string
+	DegreeUt float64
+	Bodies   []int
+}
+
+var (
+	lat, _    = strconv.ParseFloat(os.Getenv("LATITUDE"), 64)
+	lon, _    = strconv.ParseFloat(os.Getenv("LONGITUDE"), 64)
+	signNames = []string{"Aries", "Taurus", "Gemini", "Cancer", "Leo",
+		"Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius",
+		"Pisces"}
+	houseNames = []string{"0", "I", "II", "III", "IV", "V", "VI", "VII", "VIII",
+		"IX", "X", "XI", "XII"}
+	bodies = []int{
+		swephgo.SeSun,
+		swephgo.SeMoon,
+		swephgo.SeMercury,
+		swephgo.SeVenus,
+		swephgo.SeMars,
+		swephgo.SeJupiter,
+		swephgo.SeSaturn,
+		swephgo.SeUranus,
+		swephgo.SeNeptune,
+		swephgo.SePluto,
+	}
+	system = map[string]int{
+		"Placidus":      int('P'),
+		"Koch":          int('K'),
+		"Porphyrius":    int('O'),
+		"Regiomontanus": int('R'),
+		"Equal":         int('E'),
+		"Whole":         int('W'),
+	}
+)
+
+/* Bodies() - return longitude of all planets
+ */
+func Bodies(when time.Time) []float64 {
+	var b []float64
+	for _, ipl := range bodies {
+		x2, _ := Waldo(when, ipl, swephgo.SeflgSwieph+swephgo.SeflgRadians)
+		b = append(b, x2[0])
+	}
+	return b
+}
+
+/* Houses() - fill in all houses (sign, position, cusp)
+ */
+func Houses(Cusps []float64) *[]House {
+	var houses []House
+	for house := 1; house <= 12; house++ {
+		degreeUt := deg2rad(float64(Cusps[house]))
+		for i, _ := range signNames {
+			degLow := float64(i) * math.Pi / 6.0
+			degHigh := float64((i + 1)) * math.Pi / 6.0
+			if degreeUt >= degLow && degreeUt <= degHigh {
+				houses = append(houses,
+					House{
+						SignName: signNames[i],
+						Degree:   rad2deg(degreeUt - degLow),
+						Number:   houseNames[house],
+						DegreeUt: rad2deg(degreeUt),
+					},
+				)
+			}
+		}
+	}
+	return &houses
+}
+
+/* Cusps() gest cusps and asmc
+ */
+func Cusps(when time.Time, lat float64, lon float64, hsys int) ([]float64, []float64, error) {
+	cusps := make([]float64, 13)
+	asmc := make([]float64, 10)
+	serr := make([]byte, 256)
+	julianDay := julian(when)
+	swephgo.SetTopo(lat, lon, 0)
+	if eclflag := swephgo.Houses(*julianDay, lat, lon, hsys, cusps, asmc); eclflag == swephgo.Err {
+		log.Printf("Error %d %s", eclflag, string(serr))
+		return nil, nil, errors.New(string(serr))
+	}
+	return cusps, asmc, nil
+}
+
+/* Aspect() returns an aspect of two celectial bodies if any
+or empty string
 */
+func Aspect(body1 float64, body2 float64) string {
+	aspect := ""
+	angle := smallestSignedAngleBetween(body1, body2)
+	if math.Abs(angle) < deg2rad(10.0) {
+		aspect = "Conjunction"
+	}
+	if math.Abs(angle-math.Pi) < deg2rad(10.0) {
+		aspect = "Opposition"
+	}
+	if math.Abs(angle-2.0*math.Pi/3.0) < deg2rad(8.0) {
+		aspect = "Trine"
+	}
+	if math.Abs(angle-math.Pi/2.0) < deg2rad(6.0) {
+		aspect = "Square"
+	}
+	if math.Abs(angle-math.Pi/3.0) < deg2rad(4.0) {
+		aspect = "Sextile"
+	}
+	if math.Abs(angle-5.0*math.Pi/6.0) < deg2rad(2.0) {
+		aspect = "Quincunx"
+	}
+	if math.Abs(angle-math.Pi/6.0) < deg2rad(1.0) {
+		aspect = "Semi-sextile"
+	}
+	return aspect
+}
+
 /*
 What is the phase (ilumination) of a planet?
 https://groups.io/g/swisseph/message/7327
@@ -128,51 +246,105 @@ func Retro(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr *[
 	return 0
 }
 
-/* general helpers - should go to separete file */
-
-func jdToUTC(jd *float64) time.Time {
-	year := make([]int, 1)
-	month := make([]int, 1)
-	day := make([]int, 1)
-	hour := make([]float64, 1)
-	swephgo.Revjul(*jd, swephgo.SeGregCal, year, month, day, hour)
-	h := int(hour[0])
-	m := int(60 * (hour[0] - float64(h)))
-	utc := time.Date(year[0], time.Month(month[0]), day[0], h, m, 0, 0, time.UTC)
-	return utc
+/* SolarEclipse() find nearest solar eclipse
+ */
+func SolarEclipse(when time.Time, ifltype int) ([]float64, error) {
+	julianDay := julian(when)
+	x2 := make([]float64, 10)
+	attr := make([]float64, 20)
+	geopos := make([]float64, 10)
+	serr := make([]byte, 256)
+	method := swephgo.SeflgSwieph
+	var eclflag int32
+	tjdStart := *julianDay
+	/* find next eclipse anywhere on Earth */
+	if eclflag = swephgo.SolEclipseWhenGlob(tjdStart, method, ifltype, x2, 0, serr); eclflag == swephgo.Err {
+		return x2, errors.New(string(serr))
+	}
+	/* the time of the greatest eclipse has been returned in tret[0];
+	 * now we can find geographical position of the eclipse maximum */
+	tjdStart = x2[0]
+	if eclflag = swephgo.SolEclipseWhere(tjdStart, method, geopos, attr, serr); eclflag == swephgo.Err {
+		return x2, errors.New(string(serr))
+	}
+	/* the geographical position of the eclipse maximum is in geopos[0] and geopos[1];
+	 * now we can calculate the four contacts for this place. The start time is chosen
+	 * a day before the maximum eclipse: */
+	tjdStart = x2[0] - 1
+	if eclflag = swephgo.SolEclipseWhenLoc(tjdStart, method, geopos, x2, attr, 0, serr); eclflag == swephgo.Err {
+		return x2, errors.New(string(serr))
+	}
+	/* now x2[] contains the following values:
+	 * x2[0] = time of greatest eclipse (Julian day number)
+	 * x2[1] = first contact
+	 * x2[2] = second contact
+	 * x2[3] = third contact
+	 * x2[4] = fourth contact */
+	// Convert ecclipse back to Gregorian date
+	return x2, nil
 }
 
-func jdToLocal(jd *float64) time.Time {
-	utc := jdToUTC(jd)
-	return utc.In(location)
+/*
+search for any lunar eclipse, no matter which type
+ifltype = 0;
+search a total lunar eclipse
+ifltype = SE_ECL_TOTAL;
+search a partial lunar eclipse
+ifltype = SE_ECL_PARTIAL;
+search a penumbral lunar eclipse
+ifltype = SE_ECL_PENUMBRAL;
+*/
+func LunarEclipse(when time.Time, eclType int) ([]float64, error) {
+	julianDay := julian(when)
+	// Fixed length array with results for eclipse calculation - so this is output
+	x2 := make([]float64, 10)
+	serr := make([]byte, 256)
+	// Look for total eclipe for given julian date
+	// method - 0 simple, 2 Swiss etc. look backward - No
+	method := swephgo.SeflgSwieph
+	backward := bool2int(false)
+	if eclflag := swephgo.LunEclipseWhen(*julianDay, method, eclType, x2, backward, serr); eclflag == swephgo.Err {
+		return x2, errors.New(string(serr))
+	}
+	return x2, nil
 }
 
-func julian(d time.Time) *float64 {
-	h := float64(d.Hour()) + float64(d.Minute())/60 + float64(d.Second())/3600
-	jd := swephgo.Julday(d.Year(), int(d.Month()), d.Day(), h, swephgo.SeGregCal)
-	return &jd
+func getPlanetName(ipl int) string {
+	pN := make([]byte, 15)
+	swephgo.GetPlanetName(ipl, pN)
+	pN = bytes.Trim(pN, "\x00") // to get rid of trailing NUL characters
+	planetName := string(pN)
+	return planetName
 }
 
-/* Begining of the Day */
-func bod(t time.Time) time.Time {
-	year, month, day := t.Date()
-	return time.Date(year, month, day, 0, 0, 0, 0, time.Local)
+/* getHouse() get house for longitude in radians
+given houses cusps
+*/
+func getHouse(rad float64, houses *[]House) string {
+	for i := 0; i < len(*houses); i++ {
+		degLow := deg2rad((*houses)[i].DegreeUt)
+		var degHigh float64
+		if i == len(*houses)-1 {
+			degHigh = deg2rad((*houses)[0].DegreeUt)
+		} else {
+			degHigh = deg2rad((*houses)[i+1].DegreeUt)
+		}
+		if rad >= degLow && rad <= degHigh {
+			return (*houses)[i].Number
+		}
+	}
+	return (*houses)[0].Number
 }
 
-/* Noon of the Day */
-func nod(t time.Time) time.Time {
-	year, month, day := t.Date()
-	return time.Date(year, month, day, 12, 0, 0, 0, time.Local)
-}
-
-func fixangle(a float64) float64 {
-	return (a - 360*math.Floor(a/360))
-}
-
-func rad2deg(r float64) float64 {
-	return (r * 180) / math.Pi
-}
-
-func deg2rad(d float64) float64 {
-	return (d * math.Pi) / 180
+/* getSign() - cast longitude in radians to zodiac sign name
+ */
+func getSign(rad float64) string {
+	for i, sign := range signNames {
+		degLow := float64(i) * math.Pi / 6.0
+		degHigh := float64((i + 1)) * math.Pi / 6.0
+		if rad >= degLow && rad <= degHigh {
+			return sign
+		}
+	}
+	return ""
 }
