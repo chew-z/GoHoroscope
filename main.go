@@ -23,7 +23,9 @@ func init() {
 func main() {
 	now := time.Now()
 	PrintRetro(now, now.AddDate(1, 0, 1))
+	fmt.Println()
 	PrintEclipse(now, now.AddDate(1, 0, 1))
+	fmt.Println()
 	hsys := system["Placidus"]
 	PrintHoroscope(now, hsys) // lat, lon is given implicite in .env
 	defer swephgo.Close()
@@ -90,7 +92,6 @@ func PrintRetro(start time.Time, end time.Time) {
 			prevDate = wd
 			d = wd.AddDate(0, 0, 7) // start looking for next change in a direction 7 days ahead
 		}
-		fmt.Println()
 	}
 }
 
@@ -102,7 +103,6 @@ func PrintEclipse(start time.Time, end time.Time) {
 		fmt.Printf("Lunar eclipse: %s\t \n", jdToLocal(&l[0])) // eclipse maximum [0]
 		d = wd.AddDate(0, 0, 7)
 	}
-	fmt.Println()
 	d = start
 	for d.After(end) == false {
 		s, _ := SolarEclipse(d, swephgo.SeEclAlltypesSolar)
@@ -110,5 +110,4 @@ func PrintEclipse(start time.Time, end time.Time) {
 		fmt.Printf("Solar eclipse: %s\n", jdToLocal(&s[0])) // eclipse maximum [0]
 		d = wd.AddDate(0, 0, 7)
 	}
-	fmt.Println()
 }

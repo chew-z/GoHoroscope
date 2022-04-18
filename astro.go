@@ -178,13 +178,10 @@ func Retro(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr *[
 	x2, _ := Waldo(start, ipl, iflag)
 	y0 := x2[0]
 	y1 := x2[0]
-	planetName := make([]byte, 10)
-	swephgo.GetPlanetName(ipl, planetName)
-	start = nod(start)
+	start = bod(start)
 	end := start.AddDate(2, 0, 1) // look ahead up to 2 years and 1 day
 	step := 0
 	for d := start; d.After(end) == false; d = d.AddDate(0, 0, 1) {
-		// fmt.Printf("%s %.10f retro date %s\n", string(planetName), y0, d.Format("2006-01-02 15:04:05"))
 		jd := swephgo.Julday(d.Year(), int(d.Month()), d.Day(), float64(d.Hour()), swephgo.SeGregCal)
 		x2, _ = Waldo(d, ipl, iflag)
 		y2 := x2[0]
