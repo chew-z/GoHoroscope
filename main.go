@@ -9,6 +9,7 @@ import (
 	"github.com/araddon/dateparse"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/mshafiee/swephgo"
+	"github.com/scylladb/termtables"
 )
 
 var (
@@ -24,18 +25,18 @@ func init() {
 func main() {
 	now := time.Now()
 	if len(os.Args) < 2 {
-		fmt.Println("Usage horoscope -r|-e| [date]")
+		fmt.Println("Usage horoscope -r|-e|-h [date]")
 		return
 	}
-	if os.Args[1] == "-r" {
+	if os.Args[1] == "-r" || os.Args[1] == "--retrograde" {
 		PrintRetro(now, now.AddDate(1, 0, 1))
 		return
 	}
-	if os.Args[1] == "-e" {
+	if os.Args[1] == "-e" || os.Args[1] == "--eclipse" {
 		PrintEclipse(now, now.AddDate(1, 0, 1))
 		return
 	}
-	if os.Args[1] == "-h" {
+	if os.Args[1] == "-h" || os.Args[1] == "--horoscope" {
 		hsys := system["Placidus"]
 		if len(os.Args) < 3 {
 			PrintHoroscope(now, hsys) // lat, lon is given implicite in .env
@@ -60,20 +61,28 @@ func PrintHoroscope(when time.Time, hsys int) {
 		fmt.Println()
 		// TODO - function
 		H := Houses(Cusps)
+		table1 := termtables.CreateTable()
+		table1.AddHeaders("House", "Longitude", "Cusp", "Sign")
 		for _, h := range *H {
-			fmt.Printf("%s\t%.2f\t%.2f\t%s\n", h.Number, h.DegreeUt, h.Degree, h.SignName)
+			// fmt.Printf("%s\t%.2f\t%.2f\t%s\n", h.Number, h.DegreeUt, h.Degree, h.SignName)
+			table1.AddRow(h.Number, fmt.Sprintf("%.2f", h.DegreeUt), fmt.Sprintf("%.2f", h.Degree), h.SignName)
 		}
-		fmt.Println()
+		fmt.Println(table1.Render())
 		// TODO - function
 		B := Bodies(when)
+		table2 := termtables.CreateTable()
+		table2.AddHeaders("House", "Planet", "Longitude", "Sign", "Aspects")
 		for i, b1 := range B {
-			fmt.Printf("House %s: %s - %.2f in %s\n", getHouse(b1, H), getPlanetName(bodies[i]), rad2deg(b1), getSign(b1))
+			// fmt.Printf("House %s: %s - %.2f in %s\n", getHouse(b1, H), getPlanetName(bodies[i]), rad2deg(b1), getSign(b1))
+			table2.AddRow(getHouse(b1, H), getPlanetName(bodies[i]), fmt.Sprintf("%.2f", rad2deg(b1)), getSign(b1))
 			for j, b2 := range B[i+1:] {
 				if asp := Aspect(b1, b2); asp != "" {
-					fmt.Printf("\t%s - %s - %.2f in %s\n", asp, getPlanetName(bodies[i+j+1]), rad2deg(b2), getSign(b2))
+					c := fmt.Sprintf("\t%s - %s - %.2f in %s", asp, getPlanetName(bodies[i+j+1]), rad2deg(b2), getSign(b2))
+					table2.AddRow("", "", "", "", c)
 				}
 			}
 		}
+		fmt.Println(table2.Render())
 	}
 }
 
