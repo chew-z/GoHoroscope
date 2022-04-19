@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/araddon/dateparse"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/mshafiee/swephgo"
 )
@@ -22,22 +23,41 @@ func init() {
 
 func main() {
 	now := time.Now()
-	PrintRetro(now, now.AddDate(1, 0, 1))
-	fmt.Println()
-	PrintEclipse(now, now.AddDate(1, 0, 1))
-	fmt.Println()
-	hsys := system["Placidus"]
-	PrintHoroscope(now, hsys) // lat, lon is given implicite in .env
+	if len(os.Args) < 2 {
+		fmt.Println("Usage horoscope -r|-e| [date]")
+		return
+	}
+	if os.Args[1] == "-r" {
+		PrintRetro(now, now.AddDate(1, 0, 1))
+		return
+	}
+	if os.Args[1] == "-e" {
+		PrintEclipse(now, now.AddDate(1, 0, 1))
+		return
+	}
+	if os.Args[1] == "-h" {
+		hsys := system["Placidus"]
+		if len(os.Args) < 3 {
+			PrintHoroscope(now, hsys) // lat, lon is given implicite in .env
+		} else {
+			when, err := dateparse.ParseLocal(os.Args[2])
+			if err != nil {
+				log.Println(err.Error())
+				return
+			}
+			PrintHoroscope(when, hsys) // lat, lon is given implicite in .env
+		}
+	}
 	defer swephgo.Close()
-
 }
 
 func PrintHoroscope(when time.Time, hsys int) {
-	fmt.Printf("%s - lat: %.2f, lon: %.2f\n", when.Format(time.RFC822), lat, lon)
+	fmt.Printf("%s - lat: %.2f, lon: %.2f\n", when.In(location).Format(time.RFC822), lat, lon)
 	if Cusps, Asmc, e := Cusps(when, lat, lon, hsys); e != nil {
 		log.Panic(e)
 	} else {
 		fmt.Printf("Ascendant: %.2f MC: %.2f\n", Asmc[0], Asmc[1])
+		fmt.Println()
 		// TODO - function
 		H := Houses(Cusps)
 		for _, h := range *H {
