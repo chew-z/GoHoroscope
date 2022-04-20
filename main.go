@@ -62,7 +62,7 @@ func PrintHoroscope(when time.Time, hsys int) {
 		// TODO - function
 		H := Houses(Cusps)
 		table1 := termtables.CreateTable()
-		table1.AddHeaders("House", "Longitude", "Cusp", "Sign")
+		table1.AddHeaders("House", "Position", "Cusp", "Sign")
 		for _, h := range *H {
 			// fmt.Printf("%s\t%.2f\t%.2f\t%s\n", h.Number, h.DegreeUt, h.Degree, h.SignName)
 			table1.AddRow(h.Number, fmt.Sprintf("%.2f", h.DegreeUt), fmt.Sprintf("%.2f", h.Degree), h.SignName)
@@ -71,10 +71,10 @@ func PrintHoroscope(when time.Time, hsys int) {
 		// TODO - function
 		B := Bodies(when)
 		table2 := termtables.CreateTable()
-		table2.AddHeaders("House", "Planet", "Longitude", "Sign", "Aspects")
+		table2.AddHeaders("Planet", "Position", "House", "Sign", "Aspects")
 		for i, b1 := range B {
 			// fmt.Printf("House %s: %s - %.2f in %s\n", getHouse(b1, H), getPlanetName(bodies[i]), rad2deg(b1), getSign(b1))
-			table2.AddRow(getHouse(b1, H), getPlanetName(bodies[i]), fmt.Sprintf("%.2f", rad2deg(b1)), getSign(b1))
+			table2.AddRow(getPlanetName(bodies[i]), fmt.Sprintf("%.2f", rad2deg(b1)), getHouse(b1, H), getSign(b1))
 			for j, b2 := range B[i+1:] {
 				if asp := Aspect(b1, b2); asp != "" {
 					c := fmt.Sprintf("\t%s - %s - %.2f in %s", asp, getPlanetName(bodies[i+j+1]), rad2deg(b2), getSign(b2))
