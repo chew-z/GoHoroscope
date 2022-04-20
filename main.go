@@ -13,13 +13,14 @@ import (
 )
 
 var (
-	loc         string
-	city        = os.Getenv("CITY")
-	location, _ = time.LoadLocation(city)
-	swisspath   = os.Getenv("SWISSPATH")
+	loc       string
+	city      = os.Getenv("CITY")
+	location  *time.Location
+	swisspath = os.Getenv("SWISSPATH")
 )
 
 func init() {
+	location, _ = time.LoadLocation(city)
 	swephgo.SetEphePath([]byte(swisspath))
 }
 
@@ -96,6 +97,8 @@ func PrintRetro(start time.Time, end time.Time) {
 	var idir int
 	serr := make([]byte, 256)
 
+	table := termtables.CreateTable()
+	table.AddHeaders("Planet", "Starts", "Ends")
 	for _, ipl := range bodies {
 		if ipl < 2 {
 			continue
@@ -119,27 +122,37 @@ func PrintRetro(start time.Time, end time.Time) {
 			if idir > 0 {
 				d1 := prevDate.In(location).Format(time.RFC822)
 				d2 := wd.In(location).Format(time.RFC822)
-				fmt.Printf("%s retrograde starts: %s ends: %s\n", planetName, d1, d2)
+				// fmt.Printf("%s retrograde starts: %s ends: %s\n", planetName, d1, d2)
+				table.AddRow(planetName, d1, d2)
 			}
 			prevDate = wd
 			d = wd.AddDate(0, 0, 7) // start looking for next change in a direction 7 days ahead
 		}
 	}
+	fmt.Println(table.Render())
 }
 
 func PrintEclipse(start time.Time, end time.Time) {
 	d := start
+	table1 := termtables.CreateTable()
+	table1.AddHeaders("Lunar Eclipse")
 	for d.After(end) == false {
 		l, _ := LunarEclipse(d, swephgo.SeEclAlltypesLunar)
 		wd := jdToUTC(&l[0])
-		fmt.Printf("Lunar eclipse: %s\t \n", jdToLocal(&l[0])) // eclipse maximum [0]
+		// fmt.Printf("Lunar eclipse: %s\t \n", jdToLocal(&l[0])) // eclipse maximum [0]
+		table1.AddRow(jdToLocal(&l[0]))
 		d = wd.AddDate(0, 0, 7)
 	}
 	d = start
+	table2 := termtables.CreateTable()
+	table2.AddHeaders("Solar Eclipse")
 	for d.After(end) == false {
 		s, _ := SolarEclipse(d, swephgo.SeEclAlltypesSolar)
 		wd := jdToUTC(&s[0])
-		fmt.Printf("Solar eclipse: %s\n", jdToLocal(&s[0])) // eclipse maximum [0]
+		// fmt.Printf("Solar eclipse: %s\n", jdToLocal(&s[0])) // eclipse maximum [0]
+		table2.AddRow(jdToLocal(&s[0]))
 		d = wd.AddDate(0, 0, 7)
 	}
+	fmt.Println(table1.Render())
+	fmt.Println(table2.Render())
 }
