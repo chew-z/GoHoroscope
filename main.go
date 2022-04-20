@@ -16,10 +16,11 @@ var (
 	loc         string
 	city        = os.Getenv("CITY")
 	location, _ = time.LoadLocation(city)
+	swisspath   = os.Getenv("SWISSPATH")
 )
 
 func init() {
-	swephgo.SetEphePath([]byte("/usr/local/share/sweph/ephe"))
+	swephgo.SetEphePath([]byte(swisspath))
 }
 
 func main() {

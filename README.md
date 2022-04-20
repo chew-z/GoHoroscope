@@ -1,6 +1,8 @@
 # GoHoroscope
 
-A bit of astrology in terminal with Go. Prints Ascendant, Houses, Zodiac signs, Aspects, Positions, Solar and Lunar eclipses, Retrograde movements.
+A bit of astrology in terminal with Go. 
+
+Prints Ascendant, Houses, Zodiac signs, Aspects, Positions, Solar and Lunar eclipses, Retrograde movements.
 
 ## Installation
 
@@ -16,12 +18,15 @@ Download the Swiss Ephemeris Library [here](https://www.astro.com/ftp/swisseph/)
 $ cp libswe.so /usr/local/lib/
 ````
 
-Finally you will need some shell variables
+[Download some ephemeris files](https://www.astro.com/ftp/swisseph/ephe/) and puth them in designated folder. _sepl_18.se1_ is a good place to start.
+
+Finally you will need some shell variables (timezone, geographical position, location of Swiss Ephemeris files on your system)
 
 ```
+export CITY="Europe/London"
 export LATITUDE="51.5072"¬
 export LONGITUDE="0.1276"¬
-export CITY="Europe/London"
+export SWISSPATH="/usr/local/share/sweph/ephe"
 ```
 
 or put variables in `.env` file looking like `.env.example`
