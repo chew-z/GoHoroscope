@@ -15,13 +15,12 @@ import (
 var (
 	loc         string
 	city        = os.Getenv("CITY")
-	houseSystem = "Placidus"
+	houseSystem = os.Getenv("HOUSE_SYSTEM")
 	location    *time.Location
 	swisspath   = os.Getenv("SWISSPATH")
 )
 
 func init() {
-	houseSystem = os.Getenv("HOUSE_SYSTEM")
 	location, _ = time.LoadLocation(city)
 	swephgo.SetEphePath([]byte(swisspath))
 }
@@ -41,25 +40,25 @@ func main() {
 		return
 	}
 	if os.Args[1] == "-h" || os.Args[1] == "--horoscope" {
-		hsys := system[houseSystem]
 		if len(os.Args) < 3 {
-			PrintHoroscope(now, hsys) // lat, lon is given implicite in .env
+			PrintHoroscope(now, houseSystem) // lat, lon is given implicite in .env
 		} else {
 			when, err := dateparse.ParseLocal(os.Args[2])
 			if err != nil {
 				log.Println(err.Error())
 				return
 			}
-			PrintHoroscope(when, hsys) // lat, lon is given implicite in .env
+			PrintHoroscope(when, houseSystem) // lat, lon is given implicite in .env
 		}
 	}
 	defer swephgo.Close()
 }
 
-func PrintHoroscope(when time.Time, hsys int) {
+func PrintHoroscope(when time.Time, houseSystem string) {
 	fmt.Printf("\n%s - lat: %.2f, lon: %.2f\n", when.In(location).Format(time.RFC822), lat, lon)
-	if Cusps, Asmc, e := Cusps(when, lat, lon, hsys); e != nil {
-		log.Panic(e)
+	if Cusps, Asmc, err := Cusps(when, lat, lon, houseSystem); err != nil {
+		log.Println(err.Error())
+		return
 	} else {
 		fmt.Printf("Ascendant: %.2f MC: %.2f, House system: %s\n", Asmc[0], Asmc[1], houseSystem)
 		fmt.Println()

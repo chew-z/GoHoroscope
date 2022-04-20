@@ -25,8 +25,8 @@ Finally you will need some shell variables (timezone, geographical position, loc
 ```
 export CITY="Europe/London"
 export LATITUDE="51.5072"¬
-export HOUSE_SYSTEM="PLACIDUS"
 export LONGITUDE="0.1276"¬
+export HOUSE_SYSTEM="PLACIDUS"
 export SWISSPATH="/usr/local/share/sweph/ephe"
 ```
 

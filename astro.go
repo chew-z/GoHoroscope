@@ -71,7 +71,7 @@ func Houses(Cusps []float64) *[]House {
 		for i, _ := range signNames {
 			degLow := float64(i) * math.Pi / 6.0
 			degHigh := float64((i + 1)) * math.Pi / 6.0
-			if degreeUt >= degLow && degreeUt <= degHigh {
+			if degreeUt >= degLow && degreeUt < degHigh {
 				houses = append(houses,
 					House{
 						SignName: signNames[i],
@@ -88,7 +88,8 @@ func Houses(Cusps []float64) *[]House {
 
 /* Cusps() gest cusps and asmc
  */
-func Cusps(when time.Time, lat float64, lon float64, hsys int) ([]float64, []float64, error) {
+func Cusps(when time.Time, lat float64, lon float64, housesystem string) ([]float64, []float64, error) {
+	hsys := system[houseSystem]
 	cusps := make([]float64, 13)
 	asmc := make([]float64, 10)
 	serr := make([]byte, 256)
