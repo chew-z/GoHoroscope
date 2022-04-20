@@ -7,7 +7,7 @@ Prints Ascendant, Houses, Zodiac signs, Aspects, Positions, Solar and Lunar ecli
 ## Installation
 
 ```
-- git clone
+- git clone https://github.com/chew-z/GoHoroscope.git
 - go build -o ./bin/horoscope .
 ```
 This project is using Swiss Ephemeris with [swephgo](https://github.com/mshafiee/swephgo) as a wrapper. You will also need Swiss Ephemem library and ephemeris files. 
@@ -18,7 +18,7 @@ Download the Swiss Ephemeris Library [here](https://www.astro.com/ftp/swisseph/)
 $ cp libswe.so /usr/local/lib/
 ````
 
-[Download some ephemeris files](https://www.astro.com/ftp/swisseph/ephe/) and puth them in designated folder. _sepl_18.se1_ is a good place to start.
+[Download some ephemeris files](https://www.astro.com/ftp/swisseph/ephe/) and puth them in designated folder. *sepl_18.se1* is a good place to start.
 
 Finally you will need some shell variables (timezone, geographical position, location of Swiss Ephemeris files on your system)
 
@@ -127,4 +127,16 @@ horoscope --retrograde
 +---------+---------------------+---------------------+
 
 ```
+
+## Interpretation
+
+As for interpretation of various aspects etc. I find [Astrology King](https://astrologyking.com/) quite informative. 
+
+[Aspects](https://astrologyking.com/aspects/)
+
+[Transits](https://astrologyking.com/transits/)
+
+[Retrograde planets](https://astrologyking.com/retrograde/)
+
+[Moon phases](https://astrologyking.com/2022-moon-phases-calendar/)
 
