@@ -25,6 +25,7 @@ Finally you will need some shell variables (timezone, geographical position, loc
 ```
 export CITY="Europe/London"
 export LATITUDE="51.5072"¬
+export HOUSE_SYSTEM="PLACIDUS"
 export LONGITUDE="0.1276"¬
 export SWISSPATH="/usr/local/share/sweph/ephe"
 ```
@@ -36,95 +37,94 @@ or put variables in `.env` file looking like `.env.example`
 ```
 horoscope --horoscope [date]
 
-20 Apr 22 07:08 UTC - lat: 52.43, lon: 20.89
-Ascendant: 121.96 MC: 7.01
+20 Apr 22 10:48 CEST - lat: 52.43, lon: 20.89
+Ascendant: 139.43 MC: 33.71, House system: Placidus
 
 +-------+----------+-------+-------------+
 | House | Position | Cusp  | Sign        |
 +-------+----------+-------+-------------+
-| I     | 121.96   | 1.96  | Leo         |
-| II    | 138.02   | 18.02 | Leo         |
-| III   | 158.49   | 8.49  | Virgo       |
-| IV    | 187.01   | 7.01  | Libra       |
-| V     | 226.61   | 16.61 | Scorpio     |
-| VI    | 269.36   | 29.36 | Sagittarius |
-| VII   | 301.96   | 1.96  | Aquarius    |
-| VIII  | 318.02   | 18.02 | Aquarius    |
-| IX    | 338.49   | 8.49  | Pisces      |
-| X     | 7.01     | 7.01  | Aries       |
-| XI    | 46.61    | 16.61 | Taurus      |
-| XII   | 89.36    | 29.36 | Gemini      |
+| I     | 139.43   | 19.43 | Leo         |
+| II    | 157.49   | 7.49  | Virgo       |
+| III   | 181.35   | 1.35  | Libra       |
+| IV    | 213.71   | 3.71  | Scorpio     |
+| V     | 253.68   | 13.68 | Sagittarius |
+| VI    | 290.72   | 20.72 | Capricorn   |
+| VII   | 319.43   | 19.43 | Aquarius    |
+| VIII  | 337.49   | 7.49  | Pisces      |
+| IX    | 1.35     | 1.35  | Aries       |
+| X     | 33.71    | 3.71  | Taurus      |
+| XI    | 73.68    | 13.68 | Gemini      |
+| XII   | 110.72   | 20.72 | Cancer      |
 +-------+----------+-------+-------------+
 
-
-+---------+----------+-------+-------------+-------------------------------------------+
-| Planet  | Position | House | Sign        | Aspects                                   |
-+---------+----------+-------+-------------+-------------------------------------------+
-| Sun     | 30.27    | X     | Taurus      |
-|         |          |       |             |    Sextile - Mars - 333.97 in Pisces         |
-|         |          |       |             |    Square - Pluto - 298.58 in Capricorn      |
-| Moon    | 258.69   | V     | Sagittarius |
-|         |          |       |             |    Quincunx - Mercury - 47.56 in Taurus      |
-|         |          |       |             |    Square - Venus - 346.13 in Pisces         |
-|         |          |       |             |    Square - Neptune - 354.24 in Pisces       |
-| Mercury | 47.56    | XI    | Taurus      |
-|         |          |       |             |    Sextile - Venus - 346.13 in Pisces        |
-|         |          |       |             |    Conjunction - Uranus - 43.94 in Taurus    |
-| Venus   | 346.13   | I     | Pisces      |
-|         |          |       |             |    Conjunction - Jupiter - 355.71 in Pisces  |
-|         |          |       |             |    Sextile - Uranus - 43.94 in Taurus        |
-|         |          |       |             |    Conjunction - Neptune - 354.24 in Pisces  |
-| Mars    | 333.97   | VIII  | Pisces      |
-| Jupiter | 355.71   | I     | Pisces      |
-|         |          |       |             |    Conjunction - Neptune - 354.24 in Pisces  |
-|         |          |       |             |    Sextile - Pluto - 298.58 in Capricorn     |
-| Saturn  | 323.61   | VIII  | Aquarius    |
-|         |          |       |             |    Semi-sextile - Neptune - 354.24 in Pisces |
++---------+----------+-------+-------------+--------------------------------+
+| Planet  | Position | House | Sign        | Aspects                        |
++---------+----------+-------+-------------+--------------------------------+
+| Sun     | 30.34    | IX    | Taurus      |
+|         |          |       |             | Sextile Mars in Pisces         |
+|         |          |       |             | Square Pluto in Capricorn      |
+| Moon    | 259.69   | V     | Sagittarius |
+|         |          |       |             | Square Venus in Pisces         |
+|         |          |       |             | Sextile Saturn in Aquarius     |
+|         |          |       |             | Square Neptune in Pisces       |
+| Mercury | 47.68    | X     | Taurus      |
+|         |          |       |             | Sextile Venus in Pisces        |
+|         |          |       |             | Square Saturn in Aquarius      |
+|         |          |       |             | Conjunction Uranus in Taurus   |
+| Venus   | 346.21   | I     | Pisces      |
+|         |          |       |             | Conjunction Jupiter in Pisces  |
+|         |          |       |             | Sextile Uranus in Taurus       |
+|         |          |       |             | Conjunction Neptune in Pisces  |
+| Mars    | 334.02   | VII   | Pisces      |
+| Jupiter | 355.73   | I     | Pisces      |
+|         |          |       |             | Conjunction Neptune in Pisces  |
+|         |          |       |             | Sextile Pluto in Capricorn     |
+| Saturn  | 323.61   | VII   | Aquarius    |
+|         |          |       |             | Semi-sextile Neptune in Pisces |
 | Uranus  | 43.94    | X     | Taurus      |
 | Neptune | 354.24   | I     | Pisces      |
 | Pluto   | 298.58   | VI    | Capricorn   |
-+---------+----------+-------+-------------+-------------------------------------------+
++---------+----------+-------+-------------+--------------------------------+
 
 ```
 
 ```
 horoscope --eclipse
 
-+-------------------------------+
-| Lunar Eclipse                 |
-+-------------------------------+
-| 2022-05-16 04:11:00 +0000 UTC |
-| 2022-11-08 10:59:00 +0000 UTC |
-| 2023-05-05 17:22:00 +0000 UTC |
-+-------------------------------+
++--------------------------------+
+| Lunar Eclipse                  |
++--------------------------------+
+| 2022-05-16 06:11:00 +0200 CEST |
+| 2022-11-08 11:59:00 +0100 CET  |
+| 2023-05-05 19:23:00 +0200 CEST |
++--------------------------------+
 
-+-------------------------------+
-| Solar Eclipse                 |
-+-------------------------------+
-| 2022-04-30 20:41:00 +0000 UTC |
-| 2022-10-25 11:00:00 +0000 UTC |
-| 2023-04-20 04:16:00 +0000 UTC |
-+-------------------------------+
-
-```
++--------------------------------+
+| Solar Eclipse                  |
++--------------------------------+
+| 2022-04-30 22:41:00 +0200 CEST |
+| 2022-10-25 13:00:00 +0200 CEST |
+| 2023-04-20 06:16:00 +0200 CEST |
++--------------------------------+
 
 ```
 
+```
 horoscope --retrograde
 
-+---------+---------------------+---------------------+
-| Planet  | Starts              | Ends                |
-+---------+---------------------+---------------------+
-| Mercury | 10 May 22 11:49 UTC | 03 Jun 22 07:57 UTC |
-| Mercury | 10 Sep 22 03:27 UTC | 02 Oct 22 09:07 UTC |
-| Mercury | 29 Dec 22 09:24 UTC | 18 Jan 23 13:13 UTC |
-| Mars    | 30 Oct 22 13:25 UTC | 12 Jan 23 20:53 UTC |
-| Jupiter | 28 Jul 22 20:37 UTC | 23 Nov 22 23:02 UTC |
-| Saturn  | 04 Jun 22 21:46 UTC | 23 Oct 22 04:06 UTC |
-| Uranus  | 24 Aug 22 13:53 UTC | 22 Jan 23 22:57 UTC |
-| Neptune | 28 Jun 22 07:53 UTC | 04 Dec 22 00:13 UTC |
-| Pluto   | 29 Apr 22 18:33 UTC | 08 Oct 22 22:02 UTC |
-+---------+---------------------+---------------------+
++---------+----------------------+----------------------+
+| Planet  | Starts               | Ends                 |
++---------+----------------------+----------------------+
+| Mercury | 10 May 22 13:49 CEST | 03 Jun 22 09:57 CEST |
+| Mercury | 10 Sep 22 05:27 CEST | 02 Oct 22 11:07 CEST |
+| Mercury | 29 Dec 22 10:24 CET  | 18 Jan 23 14:13 CET  |
+| Mars    | 30 Oct 22 14:25 CET  | 12 Jan 23 21:53 CET  |
+| Jupiter | 28 Jul 22 22:38 CEST | 24 Nov 22 00:02 CET  |
+| Saturn  | 04 Jun 22 23:46 CEST | 23 Oct 22 06:06 CEST |
+| Uranus  | 24 Aug 22 15:53 CEST | 22 Jan 23 23:56 CET  |
+| Neptune | 28 Jun 22 09:53 CEST | 04 Dec 22 01:12 CET  |
+| Pluto   | 29 Apr 22 20:33 CEST | 09 Oct 22 00:02 CEST |
++---------+----------------------+----------------------+
 
 ```
 

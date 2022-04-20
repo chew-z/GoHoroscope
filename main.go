@@ -81,7 +81,7 @@ func PrintHoroscope(when time.Time, hsys int) {
 			table2.AddRow(getPlanetName(bodies[i]), fmt.Sprintf("%.2f", rad2deg(b1)), getHouse(b1, H), getSign(b1))
 			for j, b2 := range B[i+1:] {
 				if asp := Aspect(b1, b2); asp != "" {
-					c := fmt.Sprintf("\t%s - %s - %.2f in %s", asp, getPlanetName(bodies[i+j+1]), rad2deg(b2), getSign(b2))
+					c := fmt.Sprintf("%s %s in %s", asp, getPlanetName(bodies[i+j+1]), getSign(b2))
 					table2.AddRow("", "", "", "", c)
 				}
 			}
