@@ -1,8 +1,10 @@
 # GoHoroscope
 
-A bit of astrology in terminal with Go. 
+A bit of astrology in terminal with Go.
 
 Prints Ascendant, Houses, Zodiac signs, Aspects, Positions, Solar and Lunar eclipses, Retrograde movements.
+
+For htttp server with charts check [GoHoroscopeChart](https://github.com/chew-z/GoHoroscopeChart)
 
 ## Installation
 
@@ -10,15 +12,16 @@ Prints Ascendant, Houses, Zodiac signs, Aspects, Positions, Solar and Lunar ecli
 - git clone https://github.com/chew-z/GoHoroscope.git
 - go build -o ./bin/horoscope .
 ```
-This project is using Swiss Ephemeris with [swephgo](https://github.com/mshafiee/swephgo) as a wrapper. You will also need Swiss Ephemem library and ephemeris files. 
+
+This project is using Swiss Ephemeris with [swephgo](https://github.com/mshafiee/swephgo) as a wrapper. You will also need Swiss Ephemem library and ephemeris files.
 
 Download the Swiss Ephemeris Library [here](https://www.astro.com/ftp/swisseph/). After compiling the library, copy the libswe.so file to /usr/local/lib/
 
-````
+```
 $ cp libswe.so /usr/local/lib/
-````
+```
 
-[Download some ephemeris files](https://www.astro.com/ftp/swisseph/ephe/) and puth them in designated folder. *sepl_18.se1* is a good place to start.
+[Download some ephemeris files](https://www.astro.com/ftp/swisseph/ephe/) and puth them in designated folder. _sepl_18.se1_ is a good place to start.
 
 Finally you will need some shell variables (timezone, geographical position, location of Swiss Ephemeris files on your system)
 
@@ -26,7 +29,7 @@ Finally you will need some shell variables (timezone, geographical position, loc
 export CITY="Europe/London"
 export LATITUDE="51.5072"¬
 export LONGITUDE="0.1276"¬
-export HOUSE_SYSTEM="PLACIDUS"
+export HOUSE_SYSTEM="Placidus"
 export SWISSPATH="/usr/local/share/sweph/ephe"
 ```
 
@@ -130,7 +133,7 @@ horoscope --retrograde
 
 ## Interpretation
 
-As for interpretation of various aspects etc. I find [Astrology King](https://astrologyking.com/) quite informative. 
+As for interpretation of various aspects etc. I find [Astrology King](https://astrologyking.com/) quite informative.
 
 [Aspects](https://astrologyking.com/aspects/)
 
@@ -139,4 +142,3 @@ As for interpretation of various aspects etc. I find [Astrology King](https://as
 [Retrograde planets](https://astrologyking.com/retrograde/)
 
 [Moon phases](https://astrologyking.com/2022-moon-phases-calendar/)
-
