@@ -319,7 +319,7 @@ func getPlanetName(ipl int) string {
 given houses cusps
 */
 func getHouse(rad float64, houses *[]House) string {
-	for i := 0; i < len(*houses); i++ {
+	for i, _ := range *houses {
 		degLow := deg2rad((*houses)[i].DegreeUt)
 		var degHigh float64
 		if i == len(*houses)-1 {
@@ -327,10 +327,22 @@ func getHouse(rad float64, houses *[]House) string {
 		} else {
 			degHigh = deg2rad((*houses)[i+1].DegreeUt)
 		}
+		log.Printf("i: %d rad: %.2f degLow: %.2f degHigh: %.2f", i, rad, degLow, degHigh)
+		// TODO - border case
+		if degHigh < degLow {
+			// degHigh += 2.0 * math.Pi
+			// log.Printf("degLow: %.2f degHigh: %.2f", degLow, degHigh)
+			if (rad >= degLow && rad <= 2.0*math.Pi) || (rad >= 0.0 && rad <= degHigh) {
+				log.Println((*houses)[i].Number)
+				return (*houses)[i].Number
+			}
+		}
 		if rad >= degLow && rad <= degHigh {
+			log.Println((*houses)[i].Number)
 			return (*houses)[i].Number
 		}
 	}
+	log.Println((*houses)[0].Number)
 	return (*houses)[0].Number
 }
 
