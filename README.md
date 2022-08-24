@@ -2,7 +2,7 @@
 
 A bit of astrology in terminal with Go.
 
-Prints Ascendant, Houses, Zodiac signs, Aspects, Positions, Solar and Lunar eclipses, Retrograde movements.
+Prints Ascendant, Houses, Zodiac signs, Aspects, Positions, Solar and Lunar eclipses, Retrograde movements, nearest New Moon and Full Moon time and date.
 
 For htttp server with charts check [GoHoroscopeChart](https://github.com/chew-z/GoHoroscopeChart)
 
@@ -92,7 +92,7 @@ Ascendant: 139.43 MC: 33.71, House system: Placidus
 ```
 
 ```
-horoscope --eclipse
+horoscope --eclipse [date]
 
 +--------------------------------+
 | Lunar Eclipse                  |
@@ -113,7 +113,7 @@ horoscope --eclipse
 ```
 
 ```
-horoscope --retrograde
+horoscope --retrograde [date]
 
 +---------+----------------------+----------------------+
 | Planet  | Starts               | Ends                 |
@@ -128,6 +128,37 @@ horoscope --retrograde
 | Neptune | 28 Jun 22 09:53 CEST | 04 Dec 22 01:12 CET  |
 | Pluto   | 29 Apr 22 20:33 CEST | 09 Oct 22 00:02 CEST |
 +---------+----------------------+----------------------+
+
+```
+
+```
+horoscope --moon [date]
+
++----------------------+-----+----------------------+-----+
+| New Moon             |     | Full Moon            |     |
++----------------------+-----+----------------------+-----+
+| 02 Jan 22 18:09 CET  | 🌑  | 17 Jan 22 23:21 CET  | 🌕  |
+| 01 Feb 22 05:33 CET  | 🌑  | 16 Feb 22 16:58 CET  | 🌕  |
+| 02 Mar 22 17:50 CET  | 🌑  | 18 Mar 22 07:44 CET  | 🌕  |
+| 01 Apr 22 06:55 CEST | 🌑  | 16 Apr 22 19:18 CEST | 🌕  |
+| 30 Apr 22 20:43 CEST | 🌑  | 16 May 22 04:13 CEST | 🌕  |
+| 30 May 22 11:12 CEST | 🌑  | 14 Jun 22 11:30 CEST | 🌕  |
+| 29 Jun 22 02:20 CEST | 🌑  | 13 Jul 22 18:18 CEST | 🌕  |
+| 28 Jul 22 17:42 CEST | 🌑  | 12 Aug 22 01:38 CEST | 🌕  |
+| 27 Aug 22 08:36 CEST | 🌑  | 10 Sep 22 10:24 CEST | 🌕  |
+| 25 Sep 22 22:24 CEST | 🌑  | 09 Oct 22 22:24 CEST | 🌕  |
+| 25 Oct 22 11:01 CEST | 🌑  | 08 Nov 22 11:02 CET  | 🌕  |
+| 23 Nov 22 22:42 CET  | 🌑  | 08 Dec 22 03:39 CET  | 🌕  |
+| 23 Dec 22 09:53 CET  | 🌑  | 06 Jan 23 22:45 CET  | 🌕  |
+| 21 Jan 23 20:48 CET  | 🌑  | 05 Feb 23 18:39 CET  | 🌕  |
+| 20 Feb 23 07:26 CET  | 🌑  | 07 Mar 23 13:13 CET  | 🌕  |
+| 21 Mar 23 17:49 CET  | 🌑  | 06 Apr 23 04:54 CEST | 🌕  |
+| 20 Apr 23 04:18 CEST | 🌑  | 05 May 23 17:24 CEST | 🌕  |
+| 19 May 23 15:32 CEST | 🌑  | 04 Jun 23 03:16 CEST | 🌕  |
+| 18 Jun 23 04:09 CEST | 🌑  | 03 Jul 23 11:24 CEST | 🌕  |
+| 17 Jul 23 18:27 CEST | 🌑  | 01 Aug 23 18:41 CEST | 🌕  |
+| 16 Aug 23 10:04 CEST | 🌑  | 31 Aug 23 02:01 CEST | 🌕  |
++----------------------+-----+----------------------+-----+
 
 ```
 
