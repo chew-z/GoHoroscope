@@ -66,3 +66,57 @@ func bool2int(b bool) int {
 	}
 	return 0
 }
+
+func binarySearch(start Moon, end Moon, fullMoon bool) Moon {
+	half := end.date.Sub(start.date).Seconds() / 2
+	mDate := start.date.Add(time.Second * time.Duration(half))
+	phase, _ := Phase(mDate, swephgo.SeMoon)
+
+	newStart := start
+	newEnd := end
+	middle := Moon{
+		date:  mDate,
+		phase: phase,
+	}
+
+	if fullMoon {
+		if start.phase < end.phase {
+			newStart = middle
+		} else {
+			newEnd = middle
+		}
+	} else {
+		if end.phase < start.phase {
+			newStart = middle
+		} else {
+			newEnd = middle
+		}
+	}
+	if newEnd.date.Sub(newStart.date).Minutes() < 1.0 {
+		return newEnd
+	}
+	return binarySearch(newStart, newEnd, fullMoon)
+}
+
+func moonEmoji(icon string) string {
+	switch icon {
+	case "New Moon":
+		return ":new_moon:"
+	case "Waxing Crescent":
+		return ":waxing_crescent_moon:"
+	case "First Quarter":
+		return ":first_quarter_moon:"
+	case "Waxing Gibbous":
+		return ":waxing_gibbous_moon:"
+	case "Full Moon":
+		return ":full_moon:"
+	case "Waning Gibbous":
+		return ":waning_gibbous_moon:"
+	case "Third Quarter":
+		return ":last_quarter_moon:"
+	case "Waning Crescent":
+		return ":waning_crescent_moon:"
+	default:
+		return ":star:"
+	}
+}

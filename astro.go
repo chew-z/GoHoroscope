@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"time"
 
+	MoonPhase "github.com/janczer/goMoonPhase"
+	"github.com/kyokomi/emoji"
 	"github.com/mshafiee/swephgo"
 )
 
@@ -19,6 +21,13 @@ type House struct {
 	Number   string
 	DegreeUt float64
 	Bodies   []int
+}
+
+type Moon struct {
+	date      time.Time
+	phase     float64
+	phaseName string
+	emoji     string
 }
 
 var (
@@ -102,7 +111,9 @@ func Cusps(when time.Time, lat float64, lon float64, housesystem string) ([]floa
 	return cusps, asmc, nil
 }
 
-/* Aspect() returns an aspect of two celectial bodies if any
+/*
+	Aspect() returns an aspect of two celectial bodies if any
+
 or empty string
 */
 func Aspect(body1 float64, body2 float64) string {
@@ -170,7 +181,7 @@ func RetroUt(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr 
 	return rval
 }
 
-//int swe_next_direction_change(double jd0, int ipl, int iflag, double *jdx, int *idir, char *serr)
+// int swe_next_direction_change(double jd0, int ipl, int iflag, double *jdx, int *idir, char *serr)
 func Retro(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr *[]byte) int {
 	// x2 := make([]float64, 6)
 	var tx float64
@@ -315,7 +326,9 @@ func getPlanetName(ipl int) string {
 	return planetName
 }
 
-/* getHouse() get house for longitude in radians
+/*
+	getHouse() get house for longitude in radians
+
 given houses cusps
 */
 func getHouse(rad float64, houses *[]House) string {
@@ -327,18 +340,17 @@ func getHouse(rad float64, houses *[]House) string {
 		} else {
 			degHigh = deg2rad((*houses)[i+1].DegreeUt)
 		}
-		log.Printf("i: %d rad: %.2f degLow: %.2f degHigh: %.2f", i, rad, degLow, degHigh)
-		// TODO - border case
+		// log.Printf("i: %d rad: %.2f degLow: %.2f degHigh: %.2f", i, rad, degLow, degHigh)
 		if degHigh < degLow {
 			// degHigh += 2.0 * math.Pi
 			// log.Printf("degLow: %.2f degHigh: %.2f", degLow, degHigh)
 			if (rad >= degLow && rad <= 2.0*math.Pi) || (rad >= 0.0 && rad <= degHigh) {
-				log.Println((*houses)[i].Number)
+				// log.Println((*houses)[i].Number)
 				return (*houses)[i].Number
 			}
 		}
 		if rad >= degLow && rad <= degHigh {
-			log.Println((*houses)[i].Number)
+			// log.Println((*houses)[i].Number)
 			return (*houses)[i].Number
 		}
 	}
@@ -357,4 +369,64 @@ func getSign(rad float64) string {
 		}
 	}
 	return ""
+}
+
+/*
+	 moonPhase() - find nearest New Moon and Fuul Moona from start
+		1) Find nearest New Moon within 29 days from now
+		2) Find exact time of new moon (up to a minute)
+		3) Jump 14 days
+		4) Find exact time of Full Moon (up to a minute)
+		5) Jump 14 days
+		6) Repeat 2
+*/
+func moonPhase(start time.Time) (*Moon, *Moon) {
+	end := start.AddDate(0, 0, 31) // look ahead up to 1 month and 1 day
+	newMoon := Moon{
+		date:  start,
+		phase: 1.0,
+	}
+	for d := start; d.After(end) == false; d = d.AddDate(0, 0, 1) {
+		phase, _ := Phase(d, swephgo.SeMoon)
+		if math.Abs(1.0-phase) < math.Abs(1.0-newMoon.phase) {
+			break
+		}
+		newMoon.date = d
+		newMoon.phase = phase
+	}
+	start = newMoon.date.Add(time.Hour * -24)
+	end = newMoon.date.Add(time.Hour * 24)
+	ps, _ := Phase(start, swephgo.SeMoon)
+	startMoon := Moon{
+		date:  start,
+		phase: ps,
+	}
+	pe, _ := Phase(end, swephgo.SeMoon)
+	endMoon := Moon{
+		date:  end,
+		phase: pe,
+	}
+	newMoon = binarySearch(startMoon, endMoon, false)
+	mph := MoonPhase.New(newMoon.date)
+	newMoon.phaseName = mph.PhaseName()
+	newMoon.emoji = emoji.Sprintf("%s", moonEmoji(newMoon.phaseName))
+
+	start = newMoon.date.AddDate(0, 0, 14)
+	end = newMoon.date.AddDate(0, 0, 16) // look ahead up to 2 days
+	ps, _ = Phase(start, swephgo.SeMoon)
+	startMoon = Moon{
+		date:  start,
+		phase: ps,
+	}
+	pe, _ = Phase(end, swephgo.SeMoon)
+	endMoon = Moon{
+		date:  end,
+		phase: pe,
+	}
+	fullMoon := binarySearch(startMoon, endMoon, true)
+	mph = MoonPhase.New(fullMoon.date)
+	fullMoon.phaseName = mph.PhaseName()
+	fullMoon.emoji = emoji.Sprintf("%s", moonEmoji(fullMoon.phaseName))
+
+	return &newMoon, &fullMoon
 }

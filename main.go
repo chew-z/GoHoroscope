@@ -51,6 +51,19 @@ func main() {
 			PrintHoroscope(when, houseSystem) // lat, lon is given implicite in .env
 		}
 	}
+	if os.Args[1] == "-m" || os.Args[1] == "--moon" {
+		if len(os.Args) < 3 {
+			PrintMoons(now) // lat, lon is given implicite in .env
+		} else {
+			when, err := dateparse.ParseLocal(os.Args[2])
+			if err != nil {
+				log.Println(err.Error())
+				return
+			}
+			PrintMoons(when) // lat, lon is given implicite in .env
+		}
+	}
+
 	defer swephgo.Close()
 }
 
@@ -89,7 +102,9 @@ func PrintHoroscope(when time.Time, houseSystem string) {
 	}
 }
 
-/* PrintRetro - find retrograde movements
+/*
+	PrintRetro - find retrograde movements
+
 (when the movement is changing direction)
 */
 func PrintRetro(start time.Time, end time.Time) {
@@ -156,4 +171,19 @@ func PrintEclipse(start time.Time, end time.Time) {
 	}
 	fmt.Println(table1.Render())
 	fmt.Println(table2.Render())
+}
+
+func PrintMoons(when time.Time) {
+
+	start := time.Date(when.Year(), time.January, 1, 0, 0, 0, 0, location)
+	end := when.AddDate(1, 0, 1) // look ahead up to 1 year and 1 day
+	table1 := termtables.CreateTable()
+	table1.AddHeaders("New Moon", "", "Full Moon", "")
+
+	for d := start; d.After(end) == false; {
+		newMoon, fullMoon := moonPhase(d)
+		table1.AddRow(newMoon.date.Format(time.RFC822), newMoon.emoji, fullMoon.date.Format(time.RFC822), fullMoon.emoji)
+		d = fullMoon.date.AddDate(0, 0, 14)
+	}
+	fmt.Println(table1.Render())
 }
