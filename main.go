@@ -32,13 +32,31 @@ func main() {
 		return
 	}
 	if os.Args[1] == "-r" || os.Args[1] == "--retrograde" {
-		PrintRetro(now, now.AddDate(1, 0, 1))
-		return
+		if len(os.Args) < 3 {
+			PrintRetro(now, now.AddDate(1, 0, 1))
+		} else {
+			when, err := dateparse.ParseLocal(os.Args[2])
+			if err != nil {
+				log.Println(err.Error())
+				return
+			}
+			PrintRetro(when, when.AddDate(1, 0, 1))
+		}
 	}
+
 	if os.Args[1] == "-e" || os.Args[1] == "--eclipse" {
-		PrintEclipse(now, now.AddDate(1, 0, 1))
-		return
+		if len(os.Args) < 3 {
+			PrintEclipse(now, now.AddDate(1, 0, 1))
+		} else {
+			when, err := dateparse.ParseLocal(os.Args[2])
+			if err != nil {
+				log.Println(err.Error())
+				return
+			}
+			PrintEclipse(when, when.AddDate(1, 0, 1))
+		}
 	}
+
 	if os.Args[1] == "-h" || os.Args[1] == "--horoscope" {
 		if len(os.Args) < 3 {
 			PrintHoroscope(now, houseSystem) // lat, lon is given implicite in .env
