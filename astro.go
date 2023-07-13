@@ -156,6 +156,10 @@ func Phase(when time.Time, planet int) (float64, error) {
 		log.Printf("Error %d %s", eclflag, string(serr))
 		return 0.0, errors.New(string(serr))
 	}
+	/*
+		attr[0] = phase angle (Earth-planet-sun)
+		attr[1] = phase (illumined fraction of disc)
+	*/
 	return attr[1], nil
 }
 
@@ -232,26 +236,27 @@ func Retro(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr *[
 			b = (d1 + d2) / 2
 			a = (d2 - d1) / 2
 			if a == 0 {
-				continue          // curve is flat }
-				tx = -b / a / 2.0 // time when derivative is zer0
-				if tx < -1 || tx > 1 {
-					continue
-				}
-				*jdx = t1 + tx*jd_step
-				tdiff := math.Abs(*jdx - t1)
-				if tdiff < 1/86400.0 { // precision up to 1 minute
-					break
-				}
+				continue
+			} // curve is flat
+			tx = -b / a / 2.0 // time when derivative is zer0
+			if tx < -1 || tx > 1 {
+				continue
 			}
-			if a > 0 {
-				*idir = 1
-			} else {
-				*idir = -1
+			*jdx = t1 + tx*jd_step
+			tdiff := math.Abs(*jdx - t1)
+			if tdiff < 1/86400.0 { // precision up to 1 minute
+				break
 			}
-			step++
-			return 0
 		}
+		if a > 0 {
+			*idir = 1
+		} else {
+			*idir = -1
+		}
+		step++
+		return 0
 	}
+
 	return 0
 }
 
@@ -372,7 +377,7 @@ func getSign(rad float64) string {
 }
 
 /*
-	 moonPhase() - find nearest New Moon and Fuul Moona from start
+	 moonPhase() - find nearest New Moon and Full Moona from start
 		1) Find nearest New Moon within 29 days from now
 		2) Find exact time of new moon (up to a minute)
 		3) Jump 14 days

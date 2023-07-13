@@ -28,7 +28,7 @@ func init() {
 func main() {
 	now := time.Now()
 	if len(os.Args) < 2 {
-		fmt.Println("Usage horoscope -r|-e|-h [date]")
+		fmt.Println("Usage horoscope -r|-e|-h|-m [date]")
 		return
 	}
 	if os.Args[1] == "-r" || os.Args[1] == "--retrograde" {

@@ -4,3 +4,4 @@ go.sum
 libswe.so
 *.bak
 bin/**
+LICENSE
