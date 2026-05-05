@@ -29,3 +29,10 @@ tasks:
     deps: [build]
     cmds:
       - install -m 0755 {{.BIN}} {{.INSTALL_DIR}}/horoscope
+
+  test:
+    desc: Run the Go test suite (ephemeris tests skip without SWISSPATH)
+    env:
+      LIBRARY_PATH: '{{.LIBSWE_LIBDIR}}'
+    cmds:
+      - go test ./...

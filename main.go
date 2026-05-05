@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"time"
@@ -126,6 +127,10 @@ func PrintHoroscope(when time.Time, houseSystem string) {
 (when the movement is changing direction)
 */
 func PrintRetro(start time.Time, end time.Time) {
+	printRetroTo(os.Stdout, start, end)
+}
+
+func printRetroTo(w io.Writer, start time.Time, end time.Time) {
 	iflag := swephgo.SeflgSwieph
 	var tx float64
 	var idir int
@@ -150,20 +155,31 @@ func PrintRetro(start time.Time, end time.Time) {
 			wd := jdToUTC(&tx)
 			if i == 0 { // skip first step
 				i++
+				if wd.After(start) {
+					prevDate = wd // first detection is in the future — adopt as boundary
+				} // else keep prevDate = start (deliberate clamp)
+				next := wd.AddDate(0, 0, 7)
+				if next.Before(start) {
+					next = start.AddDate(0, 0, 7) // never search earlier than start+7d
+				}
+				d = next
 				continue
 			}
 			// what is the vector?
 			if idir > 0 {
 				d1 := prevDate.In(location).Format(time.RFC822)
 				d2 := wd.In(location).Format(time.RFC822)
-				// fmt.Printf("%s retrograde starts: %s ends: %s\n", planetName, d1, d2)
 				table.AddRow(planetName, d1, d2)
 			}
 			prevDate = wd
-			d = wd.AddDate(0, 0, 7) // start looking for next change in a direction 7 days ahead
+			next := wd.AddDate(0, 0, 7)
+			if !next.After(d) {
+				next = d.AddDate(0, 0, 7) // never go backward from current cursor
+			}
+			d = next
 		}
 	}
-	fmt.Println(table.Render())
+	fmt.Fprintln(w, table.Render())
 }
 
 func PrintEclipse(start time.Time, end time.Time) {

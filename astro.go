@@ -191,12 +191,27 @@ func Retro(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr *[
 	var tx float64
 	jd_step := 1.0
 	jd0 := swephgo.Julday(start.Year(), int(start.Month()), start.Day(), float64(start.Hour()), swephgo.SeGregCal)
-	x2, _ := Waldo(start, ipl, iflag)
-	y0 := x2[0]
-	y1 := x2[0]
 	start = bod(start)
+
+	// Default (fallback) seed — used if prior-day samples unavailable
+	xCur, errCur := Waldo(start, ipl, iflag)
+	if errCur != nil {
+		copy(*serr, "Retro: ephemeris failure at start: "+errCur.Error())
+		return -1
+	}
+	y0 := xCur[0]
+	y1 := xCur[0]
+
+	// Try to seed with two real prior days — eliminates the y0=y1 degeneracy
+	if x0, err0 := Waldo(start.AddDate(0, 0, -2), ipl, iflag); err0 == nil {
+		if x1, err1 := Waldo(start.AddDate(0, 0, -1), ipl, iflag); err1 == nil {
+			y0 = x0[0]
+			y1 = x1[0]
+		}
+	}
 	end := start.AddDate(2, 0, 1) // look ahead up to 2 years and 1 day
 	step := 0
+	var x2 []float64
 	for d := start; d.After(end) == false; d = d.AddDate(0, 0, 1) {
 		jd := swephgo.Julday(d.Year(), int(d.Month()), d.Day(), float64(d.Hour()), swephgo.SeGregCal)
 		x2, _ = Waldo(d, ipl, iflag)
@@ -248,7 +263,62 @@ func Retro(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr *[
 				break
 			}
 		}
-		if a > 0 {
+		// Probe planetary motion ±1 day around the converged candidate to
+		// classify direction reliably and reject numerical artifacts.
+		//
+		// The bisection's micro-curvature `a` has random sign for slow-moving
+		// bodies (e.g. Pluto), so its sign cannot be trusted. Instead, sample
+		// longitude at jdx-1d, jdx, jdx+1d and compute signed velocities:
+		//   vBefore = pos(jdx) - pos(jdx-1d)   (motion entering the candidate)
+		//   vAfter  = pos(jdx+1d) - pos(jdx)   (motion leaving the candidate)
+		//
+		// A real station reverses direction → opposite signs. A "spurious
+		// vertex" inside continuous motion (numerical artifact, common for
+		// Pluto inside its retrograde) → same signs; skip past it and resume
+		// scanning instead of misreporting it as a station.
+		tStation := *jdx
+		tProbeBefore := tStation - 1.0
+		tProbeAfter := tStation + 1.0
+		xStation, errS := Waldo(jdToUTC(&tStation), ipl, iflag)
+		xBefore, errB := Waldo(jdToUTC(&tProbeBefore), ipl, iflag)
+		xAfter, errA := Waldo(jdToUTC(&tProbeAfter), ipl, iflag)
+		if errS != nil || errB != nil || errA != nil {
+			msg := "Retro: direction probe out of ephemeris range"
+			if errS != nil {
+				msg += "; station: " + errS.Error()
+			}
+			if errB != nil {
+				msg += "; before: " + errB.Error()
+			}
+			if errA != nil {
+				msg += "; after: " + errA.Error()
+			}
+			copy(*serr, msg)
+			return -1
+		}
+		vBefore := swephgo.Difdeg2n(xStation[0], xBefore[0])
+		vAfter := swephgo.Difdeg2n(xAfter[0], xStation[0])
+
+		sameSign := (vBefore > 0 && vAfter > 0) || (vBefore < 0 && vAfter < 0)
+		if sameSign || vAfter == 0 {
+			// Spurious vertex — no real direction change. Advance past it and
+			// re-seed daily-scan state so the outer loop can find the next
+			// real station.
+			skipTo := jdToUTC(&tStation).AddDate(0, 0, 2)
+			if skipTo.After(d) {
+				d = skipTo
+			}
+			jd_step = 1.0
+			if r0, e0 := Waldo(d.AddDate(0, 0, -2), ipl, iflag); e0 == nil {
+				if r1, e1 := Waldo(d.AddDate(0, 0, -1), ipl, iflag); e1 == nil {
+					y0 = r0[0]
+					y1 = r1[0]
+				}
+			}
+			continue
+		}
+
+		if vAfter > 0 {
 			*idir = 1
 		} else {
 			*idir = -1
