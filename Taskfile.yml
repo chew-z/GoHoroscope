@@ -1,0 +1,31 @@
+version: '3'
+
+vars:
+  BIN: bin/horoscope
+  INSTALL_DIR: '{{.HOME}}/.local/bin'
+  LIBSWE_ABS_PATH: /usr/local/lib/libswe.so
+  LIBSWE_LIBDIR: /Users/rrj/Projekty/Astro/lib
+
+tasks:
+  default:
+    cmds: [task: build]
+
+  build:
+    desc: Build the horoscope binary and rewrite libswe.so to an absolute path
+    env:
+      LIBRARY_PATH: '{{.LIBSWE_LIBDIR}}'
+    sources:
+      - '*.go'
+      - go.mod
+    generates:
+      - '{{.BIN}}'
+    cmds:
+      - mkdir -p $(dirname {{.BIN}})
+      - go build -o {{.BIN}} .
+      - install_name_tool -change libswe.so {{.LIBSWE_ABS_PATH}} {{.BIN}}
+
+  install:
+    desc: Install horoscope to {{.INSTALL_DIR}}
+    deps: [build]
+    cmds:
+      - install -m 0755 {{.BIN}} {{.INSTALL_DIR}}/horoscope

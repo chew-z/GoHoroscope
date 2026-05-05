@@ -1,12 +1,14 @@
 module GoHoroscope
 
-go 1.20
+go 1.26
+
+toolchain go1.26.2
 
 require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/janczer/goMoonPhase v0.0.0-20210411203237-6c61017953a8
 	github.com/joho/godotenv v1.5.1
-	github.com/kyokomi/emoji v2.2.4+incompatible
+	github.com/kyokomi/emoji/v2 v2.2.13
 	github.com/mshafiee/swephgo v1.1.0
 	github.com/scylladb/termtables v1.0.0
 )

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	MoonPhase "github.com/janczer/goMoonPhase"
-	"github.com/kyokomi/emoji"
+	"github.com/kyokomi/emoji/v2"
 	"github.com/mshafiee/swephgo"
 )
 
