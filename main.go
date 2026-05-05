@@ -155,6 +155,11 @@ func printRetroTo(w io.Writer, start time.Time, end time.Time) {
 			}
 			wd := jdToUTC(&tx)
 			if i == 0 { // skip first step
+				if idir > 0 && wd.After(start) {
+					d1 := start.In(location).Format(time.RFC822)
+					d2 := wd.In(location).Format(time.RFC822)
+					table.AddRow(planetName, d1, d2)
+				}
 				i++
 				if wd.After(start) {
 					prevDate = wd // first detection is in the future — adopt as boundary

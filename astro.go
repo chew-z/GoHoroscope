@@ -188,6 +188,10 @@ func RetroUt(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr 
 // int swe_next_direction_change(double jd0, int ipl, int iflag, double *jdx, int *idir, char *serr)
 func Retro(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr *[]byte) int {
 	// x2 := make([]float64, 6)
+	if iflag&swephgo.SeflgRadians != 0 {
+		copy(*serr, "Retro: SeflgRadians is unsupported; use degree-based flags")
+		return -1
+	}
 	var tx float64
 	jd_step := 1.0
 	jd0 := swephgo.Julday(start.Year(), int(start.Month()), start.Day(), float64(start.Hour()), swephgo.SeGregCal)
@@ -311,12 +315,25 @@ func Retro(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr *[
 			// 1-day gaps for d1 and d2.
 			d = d.AddDate(0, 0, 2)
 			jd_step = 1.0
-			if r0, e0 := Waldo(d.AddDate(0, 0, -1), ipl, iflag); e0 == nil {
-				if r1, e1 := Waldo(d, ipl, iflag); e1 == nil {
-					y0 = r0[0]
-					y1 = r1[0]
+			r0, e0 := Waldo(d.AddDate(0, 0, -1), ipl, iflag)
+			r1, e1 := Waldo(d, ipl, iflag)
+			if e0 != nil || e1 != nil {
+				// Bisection clobbered y0/y1; without a successful reseed, leaving
+				// them stale paired with the advanced `d` would corrupt the next
+				// parabolic fit. Surface the ephemeris boundary as a hard error
+				// matching the warmup pattern.
+				msg := "Retro: reseed after spurious-vertex skip failed"
+				if e0 != nil {
+					msg += "; d-1: " + e0.Error()
 				}
+				if e1 != nil {
+					msg += "; d: " + e1.Error()
+				}
+				copy(*serr, msg)
+				return -1
 			}
+			y0 = r0[0]
+			y1 = r1[0]
 			continue
 		}
 
