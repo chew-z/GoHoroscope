@@ -303,14 +303,16 @@ func Retro(start time.Time, ipl int, iflag int, jdx *float64, idir *int, serr *[
 		if sameSign || vAfter == 0 {
 			// Spurious vertex — no real direction change. Advance past it and
 			// re-seed daily-scan state so the outer loop can find the next
-			// real station.
-			skipTo := jdToUTC(&tStation).AddDate(0, 0, 2)
-			if skipTo.After(d) {
-				d = skipTo
-			}
+			// real station. Use day-aligned arithmetic on `d` (preserving the
+			// 00:00 alignment from `bod(start)`) so subsequent iterations keep
+			// strict 1-day spacing required by the parabolic fit. The for-clause
+			// adds another day after `continue`, so re-seed y0/y1 at d-1 and d:
+			// the next iteration will observe y2=Waldo(d+1), giving uniform
+			// 1-day gaps for d1 and d2.
+			d = d.AddDate(0, 0, 2)
 			jd_step = 1.0
-			if r0, e0 := Waldo(d.AddDate(0, 0, -2), ipl, iflag); e0 == nil {
-				if r1, e1 := Waldo(d.AddDate(0, 0, -1), ipl, iflag); e1 == nil {
+			if r0, e0 := Waldo(d.AddDate(0, 0, -1), ipl, iflag); e0 == nil {
+				if r1, e1 := Waldo(d, ipl, iflag); e1 == nil {
 					y0 = r0[0]
 					y1 = r1[0]
 				}

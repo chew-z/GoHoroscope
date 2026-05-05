@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/araddon/dateparse"
@@ -149,8 +150,8 @@ func printRetroTo(w io.Writer, start time.Time, end time.Time) {
 		for d.After(end) == false {
 			// find nearest change of direction
 			if retval := RetroUt(d, ipl, iflag, &tx, &idir, &serr); retval < 0 {
-				log.Printf("Error %s", string(serr))
-				return
+				log.Printf("Retro %s: %s", planetName, strings.TrimRight(string(serr), "\x00"))
+				break // skip this planet, continue with the next one
 			}
 			wd := jdToUTC(&tx)
 			if i == 0 { // skip first step
