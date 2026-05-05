@@ -5,3 +5,9 @@ libswe.so
 *.bak
 bin/**
 LICENSE
+
+
+.claude/
+.mcp.json
+
+.task/
