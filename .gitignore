@@ -8,6 +8,10 @@ LICENSE
 
 
 .claude/
+.codanna/
+.codannaignore
+.codex/
+.fastembed_cache
 .mcp.json
 
 .task/
